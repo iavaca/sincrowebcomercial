@@ -37,14 +37,6 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const data = await consultarGraphQL(vigente.sesion.token, CONSULTA);
-    // Diagnóstico temporal: solo conteos por bloque (totalCount/nodos), sin contenido.
-    type Bloque = { totalCount?: unknown; nodes?: unknown[] } | null | undefined;
-    const repos = data as Record<string, Record<string, Bloque> | null | undefined> | null;
-    const conteos = [["agentes", "prs"], ["agentes", "comercial"], ["agentes", "mantenimiento"], ["pedidos", "issues"]].map(([r, a]) => {
-      const b = repos?.[r]?.[a];
-      return `${r}.${a}=${String(b?.totalCount)}/${Array.isArray(b?.nodes) ? b.nodes.length : "x"}`;
-    });
-    console.log(`bandeja: conteos ${conteos.join(" ")}`);
     const { items, truncado } = normalizar(data);
     const json = new URL(request.url).searchParams.get("formato") === "json";
     return responderBandeja(armarBandeja(items, new Date(ahora), truncado), new Date(ahora), json, cookies);
