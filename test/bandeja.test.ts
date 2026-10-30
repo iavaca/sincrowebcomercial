@@ -18,9 +18,9 @@ function sesion(extra: Partial<Sesion> = {}): Sesion {
   const ahora = Date.now();
   return { uid: USUARIO_PERMITIDO, token: "ghu_viejo", tokenVence: ahora + 8 * HORA, refresh: "ghr_viejo", refreshVence: ahora + 100 * HORA, inicio: ahora, ...extra };
 }
-async function pedir(s?: Sesion): Promise<Response> {
+async function pedir(s?: Sesion, consulta = ""): Promise<Response> {
   const headers: Record<string, string> = s ? { cookie: `${COOKIE}=${await sellar(s, CLAVE)}` } : {};
-  return GET(new Request(`${APP}/api/bandeja`, { headers }));
+  return GET(new Request(`${APP}/api/bandeja${consulta}`, { headers }));
 }
 
 beforeEach(() => {
@@ -61,16 +61,26 @@ describe("GET /api/bandeja", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("sesión vigente → 200 con la bandeja, el token de la sesión y sin Set-Cookie", async () => {
+  it("sesión vigente → 200 con HTML escapado, el token de la sesión y sin Set-Cookie", async () => {
     const res = await pedir(sesion());
     expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("text/html; charset=utf-8");
     expect(res.headers.get("cache-control")).toBe("no-store");
     expect(res.headers.getSetCookie()).toEqual([]);
-    const b = (await res.json()) as Record<string, unknown>;
-    expect(b).toEqual(expect.objectContaining({ ahora: expect.any(Array), hoy: expect.any(Array), cuando: expect.any(Array), truncado: false }));
+    const cuerpo = await res.text();
+    expect(cuerpo).toMatch(/<section data-franja="|Nada pendiente\. Bien ahí\./);
+    expect(cuerpo).not.toMatch(/<(html|body|script)/i);
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(init.headers).toMatchObject({ authorization: "Bearer ghu_viejo" });
     expect(JSON.parse(init.body as string).query).toContain("search(type: ISSUE");
+  });
+
+  it("?formato=json → la bandeja cruda en JSON", async () => {
+    const res = await pedir(sesion(), "?formato=json");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/json; charset=utf-8");
+    const b = (await res.json()) as Record<string, unknown>;
+    expect(b).toEqual(expect.objectContaining({ ahora: expect.any(Array), hoy: expect.any(Array), cuando: expect.any(Array), truncado: false }));
   });
 
   it("token por vencer → refresca, usa el token nuevo y manda la cookie nueva", async () => {
