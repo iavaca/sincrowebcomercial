@@ -116,4 +116,14 @@ describe("armarBandeja", () => {
     expect(armarBandeja([], ahora, true).truncado).toBe(true);
     expect(armarBandeja([], ahora, false).truncado).toBe(false);
   });
+  it("ids: individual por repo#numero (pedido, PR, aviso rojo) y aviso:<cliente> para el amarillo fusionado", () => {
+    const ped = pedido("cecal", dias(1));
+    const p = pr();
+    const rojo = issue({ labels: ["bandeja:mantenimiento", "nivel:rojo", "cliente:cecal"], titulo: "r" });
+    const a1 = issue({ labels: ["bandeja:mantenimiento", "cliente:cecal"], titulo: "y1" });
+    const a2 = issue({ labels: ["bandeja:mantenimiento", "nivel:amarillo", "cliente:cecal"], titulo: "y2" });
+    const b = armarBandeja([ped, p, rojo, a1, a2], ahora, false);
+    const ids = [...b.ahora, ...b.hoy, ...b.cuando].flatMap((g) => g.tarjetas.map((t) => t.id)).sort();
+    expect(ids).toEqual([`claude-agents#${p.numero}`, `claude-agents#${rojo.numero}`, "aviso:cecal", `sincroweb-pedidos#${ped.numero}`].sort());
+  });
 });

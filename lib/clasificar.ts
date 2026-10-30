@@ -41,7 +41,7 @@ function comercial(item: IssueItem, ahora: Date): Tarjeta | null {
 function aviso(item: IssueItem, ahora: Date): Tarjeta {
   const cliente = valorLabel(item.labels, "cliente:") ?? "sin-cliente";
   if (item.labels.includes("nivel:rojo")) {
-    return tarjeta(item, ahora, { id: `aviso:rojo:${item.repo}#${item.numero}`, tipo: "aviso", cliente, franja: "ahora" });
+    return tarjeta(item, ahora, { id: `${item.repo}#${item.numero}`, tipo: "aviso", cliente, franja: "ahora" });
   }
   return tarjeta(item, ahora, { id: `aviso:${cliente}`, tipo: "aviso", cliente, franja: "cuando" });
 }
