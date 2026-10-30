@@ -36,7 +36,8 @@ export async function GET(request: Request): Promise<Response> {
   const cookies = vigente.renovada ? [vigente.cookieNueva] : [];
 
   try {
-    const { items, truncado } = normalizar(await consultarGraphQL(vigente.sesion.token, CONSULTA));
+    const data = await consultarGraphQL(vigente.sesion.token, CONSULTA);
+    const { items, truncado } = normalizar(data);
     const json = new URL(request.url).searchParams.get("formato") === "json";
     return responderBandeja(armarBandeja(items, new Date(ahora), truncado), new Date(ahora), json, cookies);
   } catch (error) {

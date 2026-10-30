@@ -7,13 +7,15 @@ const datos = () => structuredClone(fixture.data) as Record<string, any>;
 afterEach(() => vi.unstubAllGlobals());
 
 describe("CONSULTA", () => {
-  it("es una sola consulta con una búsqueda por alias y sin labels:[...] (que sería AND)", () => {
-    expect(CONSULTA).not.toContain("labels:[");
-    for (const alias of ["prs", "comercial", "mantenimiento", "pedidos"]) expect(CONSULTA).toContain(`${alias}: search(type: ISSUE, first: 100`);
-    expect(CONSULTA).toContain("repo:iavaca/claude-agents is:pr is:open");
-    expect(CONSULTA).toContain('label:\\"bandeja:comercial\\"');
-    expect(CONSULTA).toContain('label:\\"bandeja:mantenimiento\\"');
-    expect(CONSULTA).toContain("repo:iavaca/sincroweb-pedidos is:issue is:open");
+  it("es una sola consulta que lee cada repositorio directo, sin search", () => {
+    expect(CONSULTA).not.toContain("search(");
+    expect(CONSULTA).toContain('agentes: repository(owner: "iavaca", name: "claude-agents")');
+    expect(CONSULTA).toContain('pedidos: repository(owner: "iavaca", name: "sincroweb-pedidos")');
+    expect(CONSULTA).toContain("prs: pullRequests(states: OPEN, first: 100) { totalCount nodes {");
+    expect(CONSULTA).toContain('comercial: issues(states: OPEN, first: 100, labels: ["bandeja:comercial"]) { totalCount');
+    expect(CONSULTA).toContain('mantenimiento: issues(states: OPEN, first: 100, labels: ["bandeja:mantenimiento"]) { totalCount');
+    expect(CONSULTA).toContain("issues: issues(states: OPEN, first: 100) { totalCount nodes {");
+    expect(CONSULTA).not.toContain("... on ");
   });
 });
 
@@ -48,43 +50,54 @@ describe("normalizar", () => {
 
   it("un issue con las dos labels bandeja:* aparece una sola vez", () => {
     const d = datos();
-    d.mantenimiento.nodes.push(structuredClone(d.comercial.nodes[0]));
+    d.agentes.mantenimiento.nodes.push(structuredClone(d.agentes.comercial.nodes[0]));
     expect(normalizar(d).items.filter((i) => i.numero === 5)).toHaveLength(1);
   });
 
-  it("ignora nodos vacíos de búsquedas (otro tipo de resultado)", () => {
+  it("ignora nodos null o vacíos", () => {
     const d = datos();
-    d.prs.nodes.push({});
+    d.agentes.prs.nodes.push({}, null);
     expect(normalizar(d).items).toHaveLength(5);
   });
 
-  it("trunca si una búsqueda tiene más resultados que los traídos", () => {
+  it("trunca si un bloque tiene más resultados que los traídos", () => {
     const d = datos();
-    d.pedidos.issueCount = 101;
+    d.pedidos.issues.totalCount = 101;
     expect(normalizar(d).truncado).toBe(true);
     const e = datos();
-    e.comercial.issueCount = 3; // hay 1 nodo
+    e.agentes.comercial.totalCount = 3; // hay 1 nodo
     expect(normalizar(e).truncado).toBe(true);
   });
 
   it("trunca si un PR tiene más de 20 archivos y conserva el total", () => {
     const d = datos();
-    d.prs.nodes[0].files.totalCount = 35;
+    d.agentes.prs.nodes[0].files.totalCount = 35;
     const r = normalizar(d);
     expect(r.truncado).toBe(true);
     expect(r.items[0]).toMatchObject({ archivosTotal: 35 });
   });
 
-  it("lanza un error controlado ante {}, null o una búsqueda rota", () => {
+  it("lanza un error controlado ante {}, null o un bloque roto", () => {
     expect(() => normalizar({})).toThrow(/respuesta_invalida/);
     expect(() => normalizar(null)).toThrow(/respuesta_invalida/);
     expect(() => normalizar(undefined)).toThrow(/respuesta_invalida/);
     const d = datos();
-    d.pedidos.nodes[0].number = "x";
+    d.pedidos.issues.nodes[0].number = "x";
     expect(() => normalizar(d)).toThrow(/respuesta_invalida/);
     const e = datos();
-    delete e.mantenimiento;
+    delete e.agentes.mantenimiento;
     expect(() => normalizar(e)).toThrow(/respuesta_invalida/);
+    const f = datos();
+    f.pedidos.issues.totalCount = "2";
+    expect(() => normalizar(f)).toThrow(/respuesta_invalida/);
+  });
+
+  it("lanza si un repositorio viene null (sin acceso o inexistente), nunca devuelve vacío", () => {
+    for (const repo of ["agentes", "pedidos"]) {
+      const d = datos();
+      d[repo] = null;
+      expect(() => normalizar(d)).toThrow(/respuesta_invalida/);
+    }
   });
 });
 
