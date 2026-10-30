@@ -55,6 +55,8 @@ function accionesComercial(t: Tarjeta, i: Item): string {
   ].join("");
 }
 
+const accionesEsperando = (i: Item) => boton("Respondió", { accion: "respondio", ...destino(i) });
+
 function accionesPr(i: PrItem): string {
   const cambios = `<form class="cambios" hidden>`
     + `<input type="text" maxlength="200" required aria-label="Qué cambios pedís (una línea)" placeholder="Qué hay que cambiar">`
@@ -85,8 +87,11 @@ function detallePr(i: PrItem): string {
     + (lista ? `<ul class="archivos">${lista}</ul>` : "");
 }
 
-function cuerpo(i: Item): string {
-  const r = resumen(i.cuerpo, MAX_RESUMEN);
+// En lo comercial, la línea "Link:" ya es el botón y las citas ("> ") son el mensaje: se muestra solo el texto.
+const textoComercial = (c: string) => c.replace(/^Link: .*$/gm, "").replace(/^> ?/gm, "");
+
+function cuerpo(i: Item, comercial = false): string {
+  const r = resumen(comercial ? textoComercial(i.cuerpo) : i.cuerpo, MAX_RESUMEN);
   return r ? `<p class="resumen">${e(r)}</p>` : "";
 }
 
@@ -112,8 +117,8 @@ function renderTarjeta(t: Tarjeta, cliente: string): string {
     detalle = cuerpo(primero);
     acciones = accionesPedido(primero);
   } else {
-    detalle = cuerpo(primero);
-    acciones = accionesComercial(t, primero);
+    detalle = cuerpo(primero, true);
+    acciones = t.subtipo === "esperando" ? accionesEsperando(primero) : accionesComercial(t, primero);
   }
   return articulo(id, t, cliente, titulo, detalle, `<div class="acciones">${acciones}</div>`);
 }
@@ -132,10 +137,26 @@ function renderGrupo(g: Grupo): string {
   return `<h3>${e(g.cliente)}</h3>` + g.tarjetas.map((t) => renderTarjeta(t, g.cliente)).join("");
 }
 
+// Las tarjetas "esperando" van aparte, plegadas, al final de su franja.
+function renderFranja(grupos: Grupo[]): string {
+  const normales: Grupo[] = [];
+  const esperando: Grupo[] = [];
+  for (const g of grupos) {
+    const [en, resto] = [g.tarjetas.filter((t) => t.subtipo === "esperando"), g.tarjetas.filter((t) => t.subtipo !== "esperando")];
+    if (resto.length > 0) normales.push({ ...g, tarjetas: resto });
+    if (en.length > 0) esperando.push({ ...g, tarjetas: en });
+  }
+  const total = esperando.reduce((n, g) => n + g.tarjetas.length, 0);
+  const plegado = total > 0
+    ? `<details class="esperando"><summary>Esperando respuesta (${total})</summary>${esperando.map(renderGrupo).join("")}</details>`
+    : "";
+  return normales.map(renderGrupo).join("") + plegado;
+}
+
 export function renderBandeja(b: Bandeja, _ahora: Date): string {
   const secciones = FRANJAS
     .filter(([f]) => b[f].length > 0)
-    .map(([f, titulo]) => `<section data-franja="${f}"><h2>${titulo}</h2>${b[f].map(renderGrupo).join("")}</section>`);
+    .map(([f, titulo]) => `<section data-franja="${f}"><h2>${titulo}</h2>${renderFranja(b[f])}</section>`);
   const vacia = secciones.length === 0;
 
   const notas: string[] = [];

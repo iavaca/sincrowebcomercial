@@ -32,8 +32,16 @@ describe("clasificar", () => {
     const t = clasificar(issue({ labels: ["bandeja:comercial", "estado:enviado", "estado:respondio"], titulo: "Acme SA · seguimiento 1" }), ahora)!;
     expect([t.tipo, t.subtipo, t.franja, t.cliente]).toEqual(["comercial", "respondio", "hoy", "Acme SA"]);
   });
-  it("estado:enviado sin respondio espera al prospecto", () => {
-    expect(clasificar(issue({ labels: ["bandeja:comercial", "estado:enviado"] }), ahora)).toBeNull();
+  it("estado:enviado sin respondio es comercial esperando, en cuando", () => {
+    const t = clasificar(issue({ labels: ["bandeja:comercial", "estado:enviado"], titulo: "Acme SA · seguimiento 1" }), ahora)!;
+    expect([t.tipo, t.subtipo, t.franja, t.cliente]).toEqual(["comercial", "esperando", "cuando", "Acme SA"]);
+  });
+  it("un estado:* que no es enviado ni respondio sigue sin tarjeta", () => {
+    expect(clasificar(issue({ labels: ["bandeja:comercial", "estado:otro"] }), ahora)).toBeNull();
+  });
+  it("el prospecto se separa del tipo con el último ' · '", () => {
+    const t = clasificar(issue({ titulo: "Foo · Bar SA · primer contacto" }), ahora)!;
+    expect([t.cliente, t.subtipo]).toEqual(["Foo · Bar SA", "primer-contacto"]);
   });
   it("mantenimiento rojo va a ahora", () => {
     const t = clasificar(issue({ labels: ["bandeja:mantenimiento", "nivel:rojo", "cliente:cecal"], titulo: "caído" }), ahora)!;
@@ -94,6 +102,14 @@ describe("armarBandeja", () => {
     const b = armarBandeja([...[1, 2, 3, 4, 5].map(primero), ...extra, resp], ahora, false);
     expect(b.cuando.flatMap((g) => g.tarjetas)).toHaveLength(5);
     expect(b.hoy.flatMap((g) => g.tarjetas)).toHaveLength(4);
+    expect(b.primerosRestantes).toBe(0);
+  });
+  it("las tarjetas esperando no entran en el lote de 5", () => {
+    const esperando = [1, 2, 3].map((n) => issue({ titulo: `E${n} · primer contacto`, labels: ["bandeja:comercial", "estado:enviado"] }));
+    const b = armarBandeja([...[1, 2, 3, 4, 5].map(primero), ...esperando], ahora, false);
+    const ts = b.cuando.flatMap((g) => g.tarjetas);
+    expect(ts.filter((t) => t.subtipo === "primer-contacto")).toHaveLength(5);
+    expect(ts.filter((t) => t.subtipo === "esperando")).toHaveLength(3);
     expect(b.primerosRestantes).toBe(0);
   });
   it("avisos amarillos del mismo cliente son una sola tarjeta con todos los items", () => {

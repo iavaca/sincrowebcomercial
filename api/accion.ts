@@ -2,9 +2,8 @@ import { accionPermitida, pasosDeAccion, validarAccion, type Accion } from "../l
 import { consultarGraphQL, llamarGitHub, mapearChecks } from "../lib/github";
 import { puedeMergear, TEXTO_MOTIVO } from "../lib/merge";
 import { COOKIE, abrir, cookieBorrar, leerCookie, leerEnv, origenValido, tokenVigente } from "../lib/sesion";
+import { Rechazo, rechazoPorStatus, statusDeError, type MotivoRespuesta } from "../lib/rechazo";
 import type { Item, PrItem } from "../lib/tipos";
-
-type MotivoRespuesta = keyof typeof TEXTO_MOTIVO;
 
 const MAX_CUERPO = 2000;
 const DUENO = "iavaca";
@@ -15,13 +14,6 @@ const CONSULTA_PR = `query PR($numero: Int!) {
     number state isDraft headRefOid mergeable
     commits(last: 1) { nodes { commit { statusCheckRollup { state } } } } } }
 }`;
-
-// Corta el flujo con una respuesta concreta; cualquier otro error termina en 502.
-class Rechazo extends Error {
-  constructor(readonly status: number, readonly motivo: MotivoRespuesta) {
-    super(motivo);
-  }
-}
 
 const esObjeto = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
 
@@ -37,13 +29,6 @@ function responder(cuerpo: unknown, status: number, cookies: string[]): Response
 
 const rechazar = (status: number, motivo: MotivoRespuesta, cookies: string[] = []) =>
   responder({ ok: false, motivo, texto: TEXTO_MOTIVO[motivo] }, status, cookies);
-
-// 401 = token revocado: sesión vencida. 403 = permiso de la App o rate limit: la sesión sigue siendo válida.
-function rechazoPorStatus(status: number): Rechazo | null {
-  if (status === 401) return new Rechazo(401, "sesion_vencida");
-  if (status === 403) return new Rechazo(502, "github_sin_permiso");
-  return null;
-}
 
 async function pedirGitHub(token: string, metodo: string, ruta: string, cuerpo?: unknown): Promise<Response> {
   const res = await llamarGitHub(token, metodo, ruta, cuerpo);
@@ -73,8 +58,8 @@ async function releerPr(token: string, numero: number): Promise<Pick<PrItem, "sh
   try {
     data = await consultarGraphQL(token, CONSULTA_PR, { numero });
   } catch (error) {
-    const status = error instanceof Error ? /^github_http_(\d{3})$/.exec(error.message)?.[1] : undefined;
-    throw (status && rechazoPorStatus(Number(status))) || error;
+    const status = statusDeError(error);
+    throw (status !== undefined && rechazoPorStatus(status)) || error;
   }
   const pr = esObjeto(data) && esObjeto(data.repository) && esObjeto(data.repository.pullRequest) ? data.repository.pullRequest : invalida("pullRequest");
   if (pr.number !== numero) invalida("pullRequest.number");

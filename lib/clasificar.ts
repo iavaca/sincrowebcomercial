@@ -13,7 +13,7 @@ function tarjeta(item: Item, ahora: Date, t: Pick<Tarjeta, "id" | "tipo" | "clie
 }
 
 function comercial(item: IssueItem, ahora: Date): Tarjeta | null {
-  const i = item.titulo.indexOf(SEPARADOR_TITULO);
+  const i = item.titulo.lastIndexOf(SEPARADOR_TITULO);
   if (i < 0) return null;
   const cliente = item.titulo.slice(0, i);
   const resto = item.titulo.slice(i + SEPARADOR_TITULO.length);
@@ -24,8 +24,11 @@ function comercial(item: IssueItem, ahora: Date): Tarjeta | null {
   if (tiene("estado:respondio")) {
     subtipo = "respondio";
     franja = "hoy";
+  } else if (tiene("estado:enviado")) {
+    subtipo = "esperando"; // ya se mandó: queda a la espera de que el prospecto conteste
+    franja = "cuando";
   } else if (item.labels.some((l) => l.startsWith("estado:"))) {
-    return null; // enviado u otro estado: espera al prospecto
+    return null; // otro estado: sin tarjeta
   } else if (/^primer contacto\b/i.test(resto)) {
     subtipo = "primer-contacto";
     franja = "cuando";

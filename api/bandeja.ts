@@ -2,6 +2,7 @@ import { armarBandeja } from "../lib/clasificar";
 import { renderBandeja } from "../lib/html";
 import { consultarGraphQL, CONSULTA, normalizar } from "../lib/github";
 import type { Bandeja } from "../lib/tipos";
+import { rechazoPorStatus, statusDeError } from "../lib/rechazo";
 import { COOKIE, abrir, cookieBorrar, leerCookie, leerEnv, tokenVigente } from "../lib/sesion";
 
 function responder(cuerpo: unknown, status: number, cookies: string[] = []): Response {
@@ -39,6 +40,10 @@ export async function GET(request: Request): Promise<Response> {
     const json = new URL(request.url).searchParams.get("formato") === "json";
     return responderBandeja(armarBandeja(items, new Date(ahora), truncado), new Date(ahora), json, cookies);
   } catch (error) {
+    const status = statusDeError(error);
+    if (status !== undefined && rechazoPorStatus(status)?.motivo === "sesion_vencida") {
+      return responder({ error: "sesion_vencida" }, 401, [cookieBorrar()]);
+    }
     console.error("bandeja: falló la lectura de GitHub", error instanceof Error ? error.message.slice(0, 80) : "desconocido");
     return responder({ error: "github_error" }, 502, cookies);
   }

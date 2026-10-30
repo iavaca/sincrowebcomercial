@@ -175,6 +175,8 @@
         return;
       }
       if (res.ok && datos && datos.ok === true) {
+        // Sin soltar el foco, pintar() se saltearía el repintado y "Pedir cambios" quedaría abierto con el texto.
+        if (document.activeElement && tarjeta.contains(document.activeElement)) document.activeElement.blur();
         await cargar();
         liberar();
         return;

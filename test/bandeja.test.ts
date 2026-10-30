@@ -105,6 +105,24 @@ describe("GET /api/bandeja", () => {
     expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
+  it("GitHub 401 → 401 sesion_vencida y borra la cookie", async () => {
+    graphql = () => new Response("", { status: 401 });
+    const res = await pedir(sesion());
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: "sesion_vencida" });
+    const cookies = res.headers.getSetCookie();
+    expect(cookies).toHaveLength(1);
+    expect(cookies[0]).toMatch(new RegExp(`^${COOKIE}=;.*Max-Age=0`));
+  });
+
+  it("GitHub 403 sigue siendo 502 github_error y no borra la cookie", async () => {
+    graphql = () => new Response("", { status: 403 });
+    const res = await pedir(sesion());
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ error: "github_error" });
+    expect(res.headers.getSetCookie()).toHaveLength(0);
+  });
+
   it("GitHub 500 → 502 github_error", async () => {
     graphql = () => new Response("", { status: 500 });
     const res = await pedir(sesion());

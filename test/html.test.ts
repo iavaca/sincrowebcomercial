@@ -83,6 +83,28 @@ describe("renderBandeja", () => {
     expect(resp).not.toContain("Respondió");
   });
 
+  it("esperando: agrupadas en un details plegado con un solo botón Respondió", () => {
+    const env = ["bandeja:comercial", "estado:enviado"];
+    const out = html([
+      issue({ titulo: "Acme · seguimiento 1", labels: env, numero: 71 }),
+      issue({ titulo: "Beta · primer contacto", labels: env, numero: 72 }),
+    ]);
+    expect(out).toContain("<details");
+    expect(out).not.toMatch(/<details[^>]*\bopen\b/);
+    expect(out).toContain("<summary>Esperando respuesta (2)</summary>");
+    expect(out.match(/data-accion="respondio"/g)).toHaveLength(2);
+    expect(out).not.toContain('data-accion="enviado"');
+    expect(out).not.toContain("Abrir ");
+    expect(out.indexOf("<details")).toBeLessThan(out.indexOf('id="t=claude-agents-71"'));
+  });
+  it("sin tarjetas esperando no hay details", () => {
+    expect(html([issue()])).not.toContain("<details");
+  });
+  it("el resumen comercial no muestra la línea Link: ni el prefijo '> '", () => {
+    const out = html([issue({ cuerpo: "Link: https://wa.me/549299\n> Hola Juan,\n> te escribo por la web" })]);
+    expect(out).toContain('<p class="resumen">Hola Juan, te escribo por la web</p>');
+    expect(out).not.toContain("Link: ");
+  });
   it("pedido: select de agentes y botones", () => {
     const out = html([issue({ repo: "sincroweb-pedidos", titulo: "Pedido", labels: ["cliente:cecal"], numero: 7 })]);
     for (const a of AGENTES) expect(out).toContain(`<option value="${a}">`);
