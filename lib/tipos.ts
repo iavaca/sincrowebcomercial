@@ -1,0 +1,12 @@
+export type Repo = "claude-agents" | "sincroweb-pedidos";
+export type Checks = "SUCCESS" | "FAILURE" | "ERROR" | "PENDING" | "EXPECTED" | null;
+export type IssueItem = { clase: "issue"; repo: Repo; numero: number; titulo: string; cuerpo: string; labels: string[]; creado: string; url: string };
+export type PrItem = { clase: "pr"; repo: "claude-agents"; numero: number; titulo: string; cuerpo: string; creado: string; url: string;
+  sha: string; mergeable: "MERGEABLE" | "CONFLICTING" | "UNKNOWN"; checks: Checks; archivos: string[]; archivosTotal: number; borrador: boolean };
+export type Item = IssueItem | PrItem;
+export type Franja = "ahora" | "hoy" | "cuando";
+export type TipoTarjeta = "comercial" | "pr" | "pedido" | "aviso";
+export type Subtipo = "primer-contacto" | "seguimiento" | "respondio" | "esperando";
+export type Tarjeta = { id: string; tipo: TipoTarjeta; subtipo?: Subtipo; cliente: string; franja: Franja; antiguedadMs: number; items: Item[]; link?: string };
+export type Grupo = { cliente: string; tarjetas: Tarjeta[] };
+export type Bandeja = { ahora: Grupo[]; hoy: Grupo[]; cuando: Grupo[]; primerosRestantes: number; truncado: boolean };

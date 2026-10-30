@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Bandeja</title>
+<link rel="stylesheet" href="/estilos.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<header class="barra">
+  <h1>Bandeja</h1>
+  <span id="estado" class="estado" aria-live="polite"></span>
+  <button type="button" id="actualizar" class="boton-barra">Actualizar</button>
+</header>
+<p id="aviso" class="aviso-conexion" role="status" hidden></p>
+<main id="bandeja" aria-live="polite" aria-busy="true"><p class="nota">Cargando…</p></main>
+<aside class="panel-vacio" aria-hidden="true">Elegí una tarjeta para ver el detalle.</aside>
+</body>
+</html>
