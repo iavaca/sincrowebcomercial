@@ -1,0 +1,34 @@
+{
+  "data": {
+    "prs": {
+      "issueCount": 2,
+      "nodes": [
+        { "number": 12, "title": "Agente nuevo de ejemplo", "body": "Suma un agente", "createdAt": "2026-10-28T10:00:00Z", "url": "https://github.com/iavaca/claude-agents/pull/12", "isDraft": false, "headRefOid": "abc123", "mergeable": "MERGEABLE",
+          "files": { "totalCount": 2, "nodes": [{ "path": "agentes/uno.md" }, { "path": "agentes/dos.md" }] },
+          "commits": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "SUCCESS" } } }] } },
+        { "number": 13, "title": "Borrador sin checks", "body": "", "createdAt": "2026-10-29T10:00:00Z", "url": "https://github.com/iavaca/claude-agents/pull/13", "isDraft": true, "headRefOid": "def456", "mergeable": "UNKNOWN",
+          "files": { "totalCount": 1, "nodes": [{ "path": "README.md" }] },
+          "commits": { "nodes": [{ "commit": { "statusCheckRollup": null } }] } }
+      ]
+    },
+    "comercial": {
+      "issueCount": 1,
+      "nodes": [
+        { "number": 5, "title": "Panadería Ejemplo · primer contacto", "body": "https://example.com/mensaje", "createdAt": "2026-10-20T10:00:00Z", "url": "https://github.com/iavaca/claude-agents/issues/5", "labels": { "nodes": [{ "name": "bandeja:comercial" }] } }
+      ]
+    },
+    "mantenimiento": {
+      "issueCount": 1,
+      "nodes": [
+        { "number": 7, "title": "Sitio caído de Ferretería Ejemplo", "body": "", "createdAt": "2026-10-30T08:00:00Z", "url": "https://github.com/iavaca/claude-agents/issues/7", "labels": { "nodes": [{ "name": "bandeja:mantenimiento" }, { "name": "cliente:ferreteria-ejemplo" }, { "name": "nivel:rojo" }] } }
+      ]
+    },
+    "pedidos": {
+      "issueCount": 2,
+      "nodes": [
+        { "number": 30, "title": "Cambiar el banner", "body": "Pedido", "createdAt": "2026-10-29T09:00:00Z", "url": "https://github.com/iavaca/sincroweb-pedidos/issues/30", "labels": { "nodes": [{ "name": "cliente:ferreteria-ejemplo" }, { "name": "urgente" }] } },
+        { "number": 31, "title": "Issue suelto sin cliente", "body": "", "createdAt": "2026-10-29T09:00:00Z", "url": "https://github.com/iavaca/sincroweb-pedidos/issues/31", "labels": { "nodes": [{ "name": "otra" }] } }
+      ]
+    }
+  }
+}
