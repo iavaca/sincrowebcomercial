@@ -48,6 +48,7 @@ describe("TEXTO_MOTIVO", () => {
       no_permitido: "Esta acción no corresponde a esta tarjeta",
       accion_invalida: "La acción no es válida, recargá la bandeja",
       config_invalida: "La bandeja está mal configurada",
+      github_sin_permiso: "GitHub no dejó hacer esto (permiso o límite). Probá en un rato.",
     });
   });
 });

@@ -2,7 +2,7 @@ import type { PrItem } from "./tipos";
 
 export type Motivo = "pr_cambio" | "checks_rojos" | "no_mergeable" | "calculando";
 
-export const TEXTO_MOTIVO: Record<Motivo | "github_error" | "sesion_vencida" | "no_permitido" | "accion_invalida" | "config_invalida", string> = {
+export const TEXTO_MOTIVO: Record<Motivo | "github_error" | "sesion_vencida" | "no_permitido" | "accion_invalida" | "config_invalida" | "github_sin_permiso", string> = {
   pr_cambio: "El PR cambió, revisalo de nuevo",
   checks_rojos: "Checks en rojo o sin terminar",
   no_mergeable: "El PR tiene conflictos o GitHub no lo deja mergear",
@@ -12,6 +12,7 @@ export const TEXTO_MOTIVO: Record<Motivo | "github_error" | "sesion_vencida" | "
   no_permitido: "Esta acción no corresponde a esta tarjeta",
   accion_invalida: "La acción no es válida, recargá la bandeja",
   config_invalida: "La bandeja está mal configurada",
+  github_sin_permiso: "GitHub no dejó hacer esto (permiso o límite). Probá en un rato.",
 };
 
 // Decide si se puede mergear lo que Iván vio (shaVisto) contra el estado actual del PR.

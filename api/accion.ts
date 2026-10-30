@@ -38,10 +38,17 @@ function responder(cuerpo: unknown, status: number, cookies: string[]): Response
 const rechazar = (status: number, motivo: MotivoRespuesta, cookies: string[] = []) =>
   responder({ ok: false, motivo, texto: TEXTO_MOTIVO[motivo] }, status, cookies);
 
-// 401/403 de GitHub = token revocado o sin permiso: se trata como sesión vencida.
+// 401 = token revocado: sesión vencida. 403 = permiso de la App o rate limit: la sesión sigue siendo válida.
+function rechazoPorStatus(status: number): Rechazo | null {
+  if (status === 401) return new Rechazo(401, "sesion_vencida");
+  if (status === 403) return new Rechazo(502, "github_sin_permiso");
+  return null;
+}
+
 async function pedirGitHub(token: string, metodo: string, ruta: string, cuerpo?: unknown): Promise<Response> {
   const res = await llamarGitHub(token, metodo, ruta, cuerpo);
-  if (res.status === 401 || res.status === 403) throw new Rechazo(401, "sesion_vencida");
+  const rechazo = rechazoPorStatus(res.status);
+  if (rechazo) throw rechazo;
   return res;
 }
 
@@ -66,8 +73,8 @@ async function releerPr(token: string, numero: number): Promise<Pick<PrItem, "sh
   try {
     data = await consultarGraphQL(token, CONSULTA_PR, { numero });
   } catch (error) {
-    if (error instanceof Error && /^github_http_40[13]$/.test(error.message)) throw new Rechazo(401, "sesion_vencida");
-    throw error;
+    const status = error instanceof Error ? /^github_http_(\d{3})$/.exec(error.message)?.[1] : undefined;
+    throw (status && rechazoPorStatus(Number(status))) || error;
   }
   const pr = esObjeto(data) && esObjeto(data.repository) && esObjeto(data.repository.pullRequest) ? data.repository.pullRequest : invalida("pullRequest");
   if (pr.number !== numero) invalida("pullRequest.number");

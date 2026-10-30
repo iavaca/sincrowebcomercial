@@ -352,19 +352,45 @@ describe("POST /api/accion: cookies y token", () => {
     expect(res.headers.getSetCookie()).toEqual([]);
   });
 
-  it("GitHub 401 o 403 (token revocado) en cualquier llamada → 401 y borra la cookie", async () => {
+  const LLAMADAS_MERGE = [`GET ${API}/repos/iavaca/claude-agents/issues/7`, `POST ${API}/graphql`, PUT_MERGE];
+
+  it("GitHub 401 (token revocado) en cualquier llamada → 401 y borra la cookie", async () => {
     const borrar = expect.stringMatching(new RegExp(`^${COOKIE}=;.*Max-Age=0`));
-    for (const status of [401, 403]) {
-      for (const ruta of [`GET ${API}/repos/iavaca/claude-agents/issues/7`, `POST ${API}/graphql`, PUT_MERGE]) {
+    for (const ruta of LLAMADAS_MERGE) {
+      const original = rutas[ruta];
+      rutas[ruta] = () => json({ message: "Bad credentials" }, 401);
+      const res = await pedir(MERGEAR, { s: sesion({ tokenVence: Date.now() + 60_000 }) });
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual(rechazo("sesion_vencida"));
+      expect(res.headers.getSetCookie()).toEqual([borrar]);
+      rutas[ruta] = original;
+    }
+  });
+
+  it("GitHub 403 (permiso o límite) en cualquier llamada → 502 github_sin_permiso sin borrar la sesión", async () => {
+    for (const renovar of [false, true]) {
+      for (const ruta of LLAMADAS_MERGE) {
         const original = rutas[ruta];
-        rutas[ruta] = () => json({ message: "Bad credentials" }, status);
-        const res = await pedir(MERGEAR, { s: sesion({ tokenVence: Date.now() + 60_000 }) });
-        expect(res.status).toBe(401);
-        expect(await res.json()).toEqual(rechazo("sesion_vencida"));
-        expect(res.headers.getSetCookie()).toEqual([borrar]);
+        rutas[ruta] = () => json({ message: "Resource not accessible by integration" }, 403);
+        const res = await pedir(MERGEAR, { s: sesion(renovar ? { tokenVence: Date.now() + 60_000 } : {}) });
+        expect(res.status).toBe(502);
+        expect(await res.json()).toEqual(rechazo("github_sin_permiso"));
+        const cookies = res.headers.getSetCookie();
+        expect(cookies.some((c) => /Max-Age=0/.test(c))).toBe(false);
+        // Si había renovado, la cookie nueva tiene que llegar igual.
+        expect(cookies).toHaveLength(renovar ? 1 : 0);
         rutas[ruta] = original;
       }
     }
+  });
+
+  it("GitHub 403 en un paso de issue → 502 github_sin_permiso", async () => {
+    rutas[`GET ${API}/repos/iavaca/claude-agents/issues/9`] = issue(["bandeja:mantenimiento"]);
+    rutas[`PATCH ${API}/repos/iavaca/claude-agents/issues/9`] = () => json({}, 403);
+    const res = await pedir({ tipo: "resuelto", repo: "claude-agents", numero: 9 });
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual(rechazo("github_sin_permiso"));
+    expect(res.headers.getSetCookie()).toEqual([]);
   });
 
   it("nunca devuelve el token en la respuesta", async () => {
