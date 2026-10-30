@@ -65,7 +65,7 @@ Cambios fuera del repo nuevo: `proyectos/sincroweb/comercial/rutina-domingo.md` 
 
 ---
 
-### Tarea 0: Lo que hace Iván (manual, sin agentes)
+### Task 0: Lo que hace Iván (manual, sin agentes)
 
 **Quién:** Iván. **Tiempo:** 40 minutos. **Bloquea:** tareas 4 en adelante para probar contra GitHub (las tareas 1 a 3 no lo necesitan).
 
@@ -84,7 +84,7 @@ Cambios fuera del repo nuevo: `proyectos/sincroweb/comercial/rutina-domingo.md` 
 
 ---
 
-### Tarea 1: Repo base y utilidades de texto seguro
+### Task 1: Repo base y utilidades de texto seguro
 
 **Agente:** `fullstack-engineer`. **Modelo:** Sonnet.
 
@@ -139,7 +139,7 @@ Cambios fuera del repo nuevo: `proyectos/sincroweb/comercial/rutina-domingo.md` 
 
 ---
 
-### Tarea 2: Clasificación y armado de la bandeja
+### Task 2: Clasificación y armado de la bandeja
 
 **Agente:** `fullstack-engineer`. **Modelo:** Opus (es la lógica más testeada y la que decide qué ve Iván).
 
@@ -187,7 +187,7 @@ Orden: dentro de cada grupo, más viejo primero; grupos ordenados por su tarjeta
 
 ---
 
-### Tarea 3: Regla de merge y validación de acciones
+### Task 3: Regla de merge y validación de acciones
 
 **Agente:** `fullstack-engineer`. **Modelo:** Opus. **Revisión:** `security-auditor` mira esta tarea junto con la 4 antes de la tarea 7.
 
@@ -253,7 +253,7 @@ Orden: dentro de cada grupo, más viejo primero; grupos ordenados por su tarjeta
 
 ---
 
-### Tarea 4: Login, sesión cifrada y refresh
+### Task 4: Login, sesión cifrada y refresh
 
 **Agente:** `fullstack-engineer`. **Modelo:** Opus. **Revisión:** `security-auditor` (junto con la tarea 3). **Depende de:** tarea 0 pasos 2, 3 y 6 para probar en preview.
 
@@ -308,7 +308,7 @@ Orden: dentro de cada grupo, más viejo primero; grupos ordenados por su tarjeta
 
 ---
 
-### Tarea 5: Lectura de GitHub y endpoint de la bandeja
+### Task 5: Lectura de GitHub y endpoint de la bandeja
 
 **Agente:** `fullstack-engineer`. **Modelo:** Sonnet.
 
@@ -335,7 +335,7 @@ Orden: dentro de cada grupo, más viejo primero; grupos ordenados por su tarjeta
 
 ---
 
-### Tarea 6: Pantalla (render escapado y página)
+### Task 6: Pantalla (render escapado y página)
 
 **Agente:** `fullstack-engineer` (integración y render) con `ux-designer` definiendo antes la tarjeta y sus estados en una nota corta dentro de la tarea (30 minutos; sin tokens nuevos: estilos propios simples, no es marca de cliente). **Modelo:** Sonnet.
 
@@ -369,7 +369,7 @@ Orden: dentro de cada grupo, más viejo primero; grupos ordenados por su tarjeta
 
 ---
 
-### Tarea 7: Acciones contra GitHub
+### Task 7: Acciones contra GitHub
 
 **Agente:** `fullstack-engineer`. **Modelo:** Opus.
 
@@ -401,7 +401,7 @@ Orden: dentro de cada grupo, más viejo primero; grupos ordenados por su tarjeta
 
 ---
 
-### Tarea 8: Headers de seguridad, CI y preview
+### Task 8: Headers de seguridad, CI y preview
 
 **Agente:** `devops-platform-engineer`. **Modelo:** Sonnet. **Depende de:** tarea 0 (pasos 1 y 6) y tareas 1 a 7.
 
@@ -420,7 +420,7 @@ Orden: dentro de cada grupo, más viejo primero; grupos ordenados por su tarjeta
 
 ---
 
-### Tarea 9: Rutina comercial genera issues para la bandeja
+### Task 9: Rutina comercial genera issues para la bandeja
 
 **Agente:** `sales-prospector` (dueño de `prospectos.md` y de la rutina), con `sales-copywriter` para el formato del cuerpo del mensaje. **Modelo:** Sonnet. **Revisión:** `qa-test-engineer`. **Se mergea a `main` de `claude-agents` solo después de la tarea 11** (decisión 6).
 
@@ -448,7 +448,7 @@ Orden: dentro de cada grupo, más viejo primero; grupos ordenados por su tarjeta
 
 ---
 
-### Tarea 10: Rutina de mantenimiento genera avisos para la bandeja
+### Task 10: Rutina de mantenimiento genera avisos para la bandeja
 
 **Agente:** `observability-sre` (dueño de `## Salud`). **Modelo:** Sonnet. **Revisión:** `qa-test-engineer`. Misma rama y mismo criterio de merge que la tarea 9.
 
@@ -468,7 +468,7 @@ Orden: dentro de cada grupo, más viejo primero; grupos ordenados por su tarjeta
 
 ---
 
-### Tarea 11: Auditoría, release y prueba real
+### Task 11: Auditoría, release y prueba real
 
 **Agentes:** `security-auditor` (veredicto), `qa-test-engineer` (lista de prueba), `devops-platform-engineer` (deploy con OK), Iván (prueba en celular y PC). **Modelo:** Opus para la auditoría, Sonnet para el resto. **Depende de:** todas.
 
