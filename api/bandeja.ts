@@ -36,7 +36,14 @@ export async function GET(request: Request): Promise<Response> {
   const cookies = vigente.renovada ? [vigente.cookieNueva] : [];
 
   try {
-    const { items, truncado } = normalizar(await consultarGraphQL(vigente.sesion.token, CONSULTA));
+    const data = await consultarGraphQL(vigente.sesion.token, CONSULTA);
+    // Diagnóstico temporal: solo conteos por búsqueda, sin contenido.
+    const conteos = ["prs", "comercial", "mantenimiento", "pedidos"].map((a) => {
+      const b = (data as Record<string, { issueCount?: unknown; nodes?: unknown[] } | undefined> | null)?.[a];
+      return `${a}=${String(b?.issueCount)}/${Array.isArray(b?.nodes) ? b.nodes.length : "x"}`;
+    });
+    console.log(`bandeja: conteos ${conteos.join(" ")}`);
+    const { items, truncado } = normalizar(data);
     const json = new URL(request.url).searchParams.get("formato") === "json";
     return responderBandeja(armarBandeja(items, new Date(ahora), truncado), new Date(ahora), json, cookies);
   } catch (error) {
