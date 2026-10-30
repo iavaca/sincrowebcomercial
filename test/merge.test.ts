@@ -46,6 +46,8 @@ describe("TEXTO_MOTIVO", () => {
       github_error: "GitHub no respondió, probá de nuevo",
       sesion_vencida: "Tu sesión venció",
       no_permitido: "Esta acción no corresponde a esta tarjeta",
+      accion_invalida: "La acción no es válida, recargá la bandeja",
+      config_invalida: "La bandeja está mal configurada",
     });
   });
 });
