@@ -1,4 +1,4 @@
-import type { Item } from "./tipos";
+import type { Item } from "./tipos.js";
 
 // Los 21 agentes de iavaca/claude-agents (*.md con frontmatter).
 export const AGENTES: readonly string[] = [

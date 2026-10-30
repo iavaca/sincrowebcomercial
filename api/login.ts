@@ -1,4 +1,4 @@
-import { MAX_ESTADO_MS, cookieEstado, estadoAlAzar, leerEnv, sellarEstado, volverSeguro } from "../lib/sesion";
+import { MAX_ESTADO_MS, cookieEstado, estadoAlAzar, leerEnv, sellarEstado, volverSeguro } from "../lib/sesion.js";
 
 export async function GET(request: Request): Promise<Response> {
   const env = leerEnv();

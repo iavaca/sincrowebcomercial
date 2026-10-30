@@ -1,4 +1,4 @@
-import type { PrItem } from "./tipos";
+import type { PrItem } from "./tipos.js";
 
 export type Motivo = "pr_cambio" | "checks_rojos" | "no_mergeable" | "calculando";
 

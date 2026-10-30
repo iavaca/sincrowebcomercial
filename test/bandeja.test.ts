@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fixture from "./fixtures/graphql.json";
-import { GET } from "../api/bandeja";
-import { COOKIE, USUARIO_PERMITIDO, abrir, sellar, type Env, type Sesion } from "../lib/sesion";
+import { GET } from "../api/bandeja.js";
+import { COOKIE, USUARIO_PERMITIDO, abrir, sellar, type Env, type Sesion } from "../lib/sesion.js";
 
 const APP = "https://bandeja.example.com";
 const CLAVE = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));

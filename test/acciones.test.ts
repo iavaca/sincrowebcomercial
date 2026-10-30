@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AGENTES, accionPermitida, pasosDeAccion, validarAccion } from "../lib/acciones";
+import { AGENTES, accionPermitida, pasosDeAccion, validarAccion } from "../lib/acciones.js";
 
 const SHA = "a".repeat(40);
 const valida = (b: unknown) => validarAccion(b);

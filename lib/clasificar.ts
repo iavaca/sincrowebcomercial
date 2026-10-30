@@ -1,5 +1,5 @@
-import { extraerLink } from "./texto";
-import type { Bandeja, Franja, Grupo, IssueItem, Item, Subtipo, Tarjeta } from "./tipos";
+import { extraerLink } from "./texto.js";
+import type { Bandeja, Franja, Grupo, IssueItem, Item, Subtipo, Tarjeta } from "./tipos.js";
 
 const LOTE_PRIMEROS_CONTACTOS = 5;
 const SEPARADOR_TITULO = " · ";

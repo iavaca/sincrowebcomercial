@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fixture from "./fixtures/graphql.json";
-import { CONSULTA, consultarGraphQL, llamarGitHub, mapearChecks, normalizar } from "../lib/github";
+import { CONSULTA, consultarGraphQL, llamarGitHub, mapearChecks, normalizar } from "../lib/github.js";
 
 const datos = () => structuredClone(fixture.data) as Record<string, any>;
 

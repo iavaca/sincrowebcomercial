@@ -10,7 +10,7 @@ import {
   pedirTokenGitHub,
   sellar,
   volverSeguro,
-} from "../lib/sesion";
+} from "../lib/sesion.js";
 
 // La cookie de estado se borra en toda respuesta: un state sirve para un solo intento.
 function texto(status: number, cuerpo: string): Response {

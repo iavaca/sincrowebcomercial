@@ -1,9 +1,9 @@
-import { armarBandeja } from "../lib/clasificar";
-import { renderBandeja } from "../lib/html";
-import { consultarGraphQL, CONSULTA, normalizar } from "../lib/github";
-import type { Bandeja } from "../lib/tipos";
-import { rechazoPorStatus, statusDeError } from "../lib/rechazo";
-import { COOKIE, abrir, cookieBorrar, leerCookie, leerEnv, tokenVigente } from "../lib/sesion";
+import { armarBandeja } from "../lib/clasificar.js";
+import { renderBandeja } from "../lib/html.js";
+import { consultarGraphQL, CONSULTA, normalizar } from "../lib/github.js";
+import type { Bandeja } from "../lib/tipos.js";
+import { rechazoPorStatus, statusDeError } from "../lib/rechazo.js";
+import { COOKIE, abrir, cookieBorrar, leerCookie, leerEnv, tokenVigente } from "../lib/sesion.js";
 
 function responder(cuerpo: unknown, status: number, cookies: string[] = []): Response {
   const headers = new Headers({ "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });

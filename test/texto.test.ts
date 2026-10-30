@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { escaparHtml, esLinkPermitido, extraerLink, resumen } from "../lib/texto";
+import { escaparHtml, esLinkPermitido, extraerLink, resumen } from "../lib/texto.js";
 
 describe("texto", () => {
   it("escaparHtml escapa & < > \" '", () =>

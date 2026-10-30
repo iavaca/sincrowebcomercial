@@ -1,4 +1,4 @@
-import { cookieBorrar, leerEnv, origenValido } from "../lib/sesion";
+import { cookieBorrar, leerEnv, origenValido } from "../lib/sesion.js";
 
 export async function POST(request: Request): Promise<Response> {
   const env = leerEnv();

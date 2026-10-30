@@ -1,9 +1,9 @@
-import { accionPermitida, pasosDeAccion, validarAccion, type Accion } from "../lib/acciones";
-import { consultarGraphQL, llamarGitHub, mapearChecks } from "../lib/github";
-import { puedeMergear, TEXTO_MOTIVO } from "../lib/merge";
-import { COOKIE, abrir, cookieBorrar, leerCookie, leerEnv, origenValido, tokenVigente } from "../lib/sesion";
-import { Rechazo, rechazoPorStatus, statusDeError, type MotivoRespuesta } from "../lib/rechazo";
-import type { Item, PrItem } from "../lib/tipos";
+import { accionPermitida, pasosDeAccion, validarAccion, type Accion } from "../lib/acciones.js";
+import { consultarGraphQL, llamarGitHub, mapearChecks } from "../lib/github.js";
+import { puedeMergear, TEXTO_MOTIVO } from "../lib/merge.js";
+import { COOKIE, abrir, cookieBorrar, leerCookie, leerEnv, origenValido, tokenVigente } from "../lib/sesion.js";
+import { Rechazo, rechazoPorStatus, statusDeError, type MotivoRespuesta } from "../lib/rechazo.js";
+import type { Item, PrItem } from "../lib/tipos.js";
 
 const MAX_CUERPO = 2000;
 const DUENO = "iavaca";

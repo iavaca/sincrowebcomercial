@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { POST } from "../api/accion";
-import { TEXTO_MOTIVO } from "../lib/merge";
-import { COOKIE, USUARIO_PERMITIDO, abrir, sellar, type Env, type Sesion } from "../lib/sesion";
+import { POST } from "../api/accion.js";
+import { TEXTO_MOTIVO } from "../lib/merge.js";
+import { COOKIE, USUARIO_PERMITIDO, abrir, sellar, type Env, type Sesion } from "../lib/sesion.js";
 
 const APP = "https://bandeja.example.com";
 const CLAVE = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));

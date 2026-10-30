@@ -14,7 +14,7 @@ import {
   sellar,
   sellarEstado,
   type Sesion,
-} from "../lib/sesion";
+} from "../lib/sesion.js";
 
 function claveNueva(): string {
   return btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));

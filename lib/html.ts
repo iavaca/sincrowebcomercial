@@ -1,6 +1,6 @@
-import { AGENTES } from "./acciones";
-import { escaparHtml, esLinkPermitido, resumen } from "./texto";
-import type { Bandeja, Checks, Grupo, Item, PrItem, Tarjeta } from "./tipos";
+import { AGENTES } from "./acciones.js";
+import { escaparHtml, esLinkPermitido, resumen } from "./texto.js";
+import type { Bandeja, Checks, Grupo, Item, PrItem, Tarjeta } from "./tipos.js";
 
 const FRANJAS = [
   ["ahora", "Ahora"],

@@ -1,4 +1,4 @@
-import type { Checks, IssueItem, Item, PrItem, Repo } from "./tipos";
+import type { Checks, IssueItem, Item, PrItem, Repo } from "./tipos.js";
 
 const TIMEOUT_MS = 8000;
 const MAX_RESULTADOS = 100;

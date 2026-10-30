@@ -1,4 +1,4 @@
-import type { TEXTO_MOTIVO } from "./merge";
+import type { TEXTO_MOTIVO } from "./merge.js";
 
 export type MotivoRespuesta = keyof typeof TEXTO_MOTIVO;
 

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { GET as login } from "../api/login";
-import { GET as callback } from "../api/callback";
-import { POST as logout } from "../api/logout";
+import { GET as login } from "../api/login.js";
+import { GET as callback } from "../api/callback.js";
+import { POST as logout } from "../api/logout.js";
 import {
   COOKIE,
   COOKIE_ESTADO,
@@ -12,7 +12,7 @@ import {
   tokenVigente,
   type Env,
   type Sesion,
-} from "../lib/sesion";
+} from "../lib/sesion.js";
 
 const APP = "https://bandeja.example.com";
 const CLAVE = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));

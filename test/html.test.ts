@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { renderBandeja } from "../lib/html";
-import { armarBandeja } from "../lib/clasificar";
-import { AGENTES } from "../lib/acciones";
-import type { Bandeja, Grupo, IssueItem, PrItem, Tarjeta } from "../lib/tipos";
+import { renderBandeja } from "../lib/html.js";
+import { armarBandeja } from "../lib/clasificar.js";
+import { AGENTES } from "../lib/acciones.js";
+import type { Bandeja, Grupo, IssueItem, PrItem, Tarjeta } from "../lib/tipos.js";
 
 const ahora = new Date("2026-11-02T12:00:00Z");
 const horas = (n: number) => new Date(ahora.getTime() - n * 3_600_000).toISOString();

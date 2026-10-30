@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { puedeMergear, TEXTO_MOTIVO } from "../lib/merge";
+import { puedeMergear, TEXTO_MOTIVO } from "../lib/merge.js";
 
 const ok = { sha: "abc", mergeable: "MERGEABLE", checks: "SUCCESS", borrador: false } as const;
 

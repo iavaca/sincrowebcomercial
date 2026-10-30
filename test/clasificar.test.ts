@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { armarBandeja, clasificar } from "../lib/clasificar";
-import type { IssueItem, PrItem } from "../lib/tipos";
+import { armarBandeja, clasificar } from "../lib/clasificar.js";
+import type { IssueItem, PrItem } from "../lib/tipos.js";
 
 const ahora = new Date("2026-11-02T12:00:00Z");
 const dias = (n: number) => new Date(ahora.getTime() - n * 86_400_000).toISOString();
