@@ -5,20 +5,26 @@ const MAX_RESULTADOS = 100;
 const MAX_ARCHIVOS = 20;
 const API = "https://api.github.com";
 
-const CAMPOS_ISSUE = "... on Issue { number title body createdAt url labels(first: 20) { nodes { name } } }";
-const CAMPOS_PR = `... on PullRequest { number title body createdAt url isDraft headRefOid mergeable
+const CAMPOS_ISSUE = "number title body createdAt url labels(first: 20) { nodes { name } }";
+const CAMPOS_PR = `number title body createdAt url isDraft headRefOid mergeable
   files(first: ${MAX_ARCHIVOS}) { totalCount nodes { path } }
-  commits(last: 1) { nodes { commit { statusCheckRollup { state } } } } }`;
+  commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }`;
 
-// Una sola request con una búsqueda por alias. labels:[a,b] sería AND, por eso comercial y mantenimiento van separadas.
-const busqueda = (alias: string, q: string, campos: string) =>
-  `${alias}: search(type: ISSUE, first: ${MAX_RESULTADOS}, query: "${q}") { issueCount nodes { ${campos} } }`;
+// `filtro` va dentro de los argumentos de la conexión (p. ej. labels).
+const bloque = (alias: string, conexion: string, filtro: string, campos: string) =>
+  `${alias}: ${conexion}(states: OPEN, first: ${MAX_RESULTADOS}${filtro}) { totalCount nodes { ${campos} } }`;
 
+// Una sola request leyendo cada repositorio directo: `search` devuelve 0 resultados con el token de usuario de la GitHub App.
+// Comercial y mantenimiento van en bloques separados, uno por bandeja; un issue con las dos labels se deduplica al normalizar.
 export const CONSULTA = `query Bandeja {
-  ${busqueda("prs", "repo:iavaca/claude-agents is:pr is:open", CAMPOS_PR)}
-  ${busqueda("comercial", 'repo:iavaca/claude-agents is:issue is:open label:\\"bandeja:comercial\\"', CAMPOS_ISSUE)}
-  ${busqueda("mantenimiento", 'repo:iavaca/claude-agents is:issue is:open label:\\"bandeja:mantenimiento\\"', CAMPOS_ISSUE)}
-  ${busqueda("pedidos", "repo:iavaca/sincroweb-pedidos is:issue is:open", CAMPOS_ISSUE)}
+  agentes: repository(owner: "iavaca", name: "claude-agents") {
+    ${bloque("prs", "pullRequests", "", CAMPOS_PR)}
+    ${bloque("comercial", "issues", ', labels: ["bandeja:comercial"]', CAMPOS_ISSUE)}
+    ${bloque("mantenimiento", "issues", ', labels: ["bandeja:mantenimiento"]', CAMPOS_ISSUE)}
+  }
+  pedidos: repository(owner: "iavaca", name: "sincroweb-pedidos") {
+    ${bloque("issues", "issues", "", CAMPOS_ISSUE)}
+  }
 }`;
 
 const ESTADOS_CHECKS = ["SUCCESS", "FAILURE", "ERROR", "PENDING", "EXPECTED"] as const;
@@ -90,22 +96,31 @@ function baseIssue(n: Record<string, unknown>, repo: Repo): IssueItem {
 
 type Busqueda = { nodos: Record<string, unknown>[]; truncada: boolean };
 
-function leerBusqueda(data: Record<string, unknown>, alias: string): Busqueda {
-  const b = data[alias];
+// `repository: null` (sin acceso o inexistente) lanza como cualquier bloque faltante.
+function leerRepositorio(data: Record<string, unknown>, alias: string): Record<string, unknown> {
+  const r = data[alias];
+  if (!esObjeto(r)) invalido(alias);
+  return r;
+}
+
+function leerBusqueda(repo: Record<string, unknown>, alias: string): Busqueda {
+  const b = repo[alias];
   if (!esObjeto(b)) invalido(alias);
   const nodos = lista(b.nodes, `${alias}.nodes`);
-  const total = numero(b.issueCount, `${alias}.issueCount`);
-  // Un nodo vacío es un resultado de otro tipo (el fragmento no aplica): se ignora.
+  const total = numero(b.totalCount, `${alias}.totalCount`);
+  // Un nodo null o vacío (p. ej. un ítem sin acceso) no es un ítem: se ignora.
   return { nodos: nodos.filter((n): n is Record<string, unknown> => esObjeto(n) && "number" in n), truncada: total > MAX_RESULTADOS || total > nodos.length };
 }
 
 // Una respuesta incompleta lanza: devolver [] se leería como "no hay nada pendiente".
 export function normalizar(data: unknown): { items: Item[]; truncado: boolean } {
   if (!esObjeto(data)) invalido("data");
-  const prs = leerBusqueda(data, "prs");
-  const comercial = leerBusqueda(data, "comercial");
-  const mantenimiento = leerBusqueda(data, "mantenimiento");
-  const pedidos = leerBusqueda(data, "pedidos");
+  const repoAgentes = leerRepositorio(data, "agentes");
+  const repoPedidos = leerRepositorio(data, "pedidos");
+  const prs = leerBusqueda(repoAgentes, "prs");
+  const comercial = leerBusqueda(repoAgentes, "comercial");
+  const mantenimiento = leerBusqueda(repoAgentes, "mantenimiento");
+  const pedidos = leerBusqueda(repoPedidos, "issues");
 
   const prItems = prs.nodos.map(basePr);
   const vistos = new Set<number>();

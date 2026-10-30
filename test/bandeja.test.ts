@@ -72,7 +72,7 @@ describe("GET /api/bandeja", () => {
     expect(cuerpo).not.toMatch(/<(html|body|script)/i);
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(init.headers).toMatchObject({ authorization: "Bearer ghu_viejo" });
-    expect(JSON.parse(init.body as string).query).toContain("search(type: ISSUE");
+    expect(JSON.parse(init.body as string).query).toContain('repository(owner: "iavaca", name: "claude-agents")');
   });
 
   it("?formato=json → la bandeja cruda en JSON", async () => {

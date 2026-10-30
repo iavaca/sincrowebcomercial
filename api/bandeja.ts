@@ -37,10 +37,12 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const data = await consultarGraphQL(vigente.sesion.token, CONSULTA);
-    // Diagnóstico temporal: solo conteos por búsqueda, sin contenido.
-    const conteos = ["prs", "comercial", "mantenimiento", "pedidos"].map((a) => {
-      const b = (data as Record<string, { issueCount?: unknown; nodes?: unknown[] } | undefined> | null)?.[a];
-      return `${a}=${String(b?.issueCount)}/${Array.isArray(b?.nodes) ? b.nodes.length : "x"}`;
+    // Diagnóstico temporal: solo conteos por bloque (totalCount/nodos), sin contenido.
+    type Bloque = { totalCount?: unknown; nodes?: unknown[] } | null | undefined;
+    const repos = data as Record<string, Record<string, Bloque> | null | undefined> | null;
+    const conteos = [["agentes", "prs"], ["agentes", "comercial"], ["agentes", "mantenimiento"], ["pedidos", "issues"]].map(([r, a]) => {
+      const b = repos?.[r]?.[a];
+      return `${r}.${a}=${String(b?.totalCount)}/${Array.isArray(b?.nodes) ? b.nodes.length : "x"}`;
     });
     console.log(`bandeja: conteos ${conteos.join(" ")}`);
     const { items, truncado } = normalizar(data);
