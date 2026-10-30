@@ -134,4 +134,12 @@ describe("renderBandeja", () => {
     expect(out).toContain('id="aviso-a&quot; onmouseover=&quot;x"');
     expect(out).not.toContain('" onmouseover="');
   });
+
+  it("el detalle de una tarjeta sin cuerpo repite título y cliente, escapados", () => {
+    const out = html([issue({ titulo: "Caído <b>web</b>", cuerpo: "", labels: ["bandeja:mantenimiento", "nivel:rojo", "cliente:cecal"] })]);
+    const detalle = /<div class="detalle">(.*?)<\/div><\/div>/s.exec(out)![1];
+    expect(detalle).toContain("Caído &lt;b&gt;web&lt;/b&gt;");
+    expect(detalle).toContain("cecal · hace 3 h");
+    expect(detalle).not.toContain("<b>");
+  });
 });

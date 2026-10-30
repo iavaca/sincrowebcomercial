@@ -101,7 +101,7 @@ function renderTarjeta(t: Tarjeta, cliente: string): string {
     const filas = t.items.map((i) =>
       `<div class="aviso">${unico ? "" : `<p>${e(i.titulo)}</p>`}`
       + `<div class="acciones">${enlace("Ver detalle", i.url)}${boton("Resuelto", { accion: "resuelto", ...destino(i) })}</div></div>`);
-    return articulo(id, t, titulo, unico ? cuerpo(primero) : "", filas.join(""));
+    return articulo(id, t, cliente, titulo, unico ? cuerpo(primero) : "", filas.join(""));
   }
   let detalle: string;
   let acciones: string;
@@ -115,13 +115,14 @@ function renderTarjeta(t: Tarjeta, cliente: string): string {
     detalle = cuerpo(primero);
     acciones = accionesComercial(t, primero);
   }
-  return articulo(id, t, titulo, detalle, `<div class="acciones">${acciones}</div>`);
+  return articulo(id, t, cliente, titulo, detalle, `<div class="acciones">${acciones}</div>`);
 }
 
-function articulo(id: string, t: Tarjeta, titulo: string, detalle: string, acciones: string): string {
+function articulo(id: string, t: Tarjeta, cliente: string, titulo: string, detalle: string, acciones: string): string {
   return `<article id="${e(id)}" class="tarjeta" data-tipo="${e(t.tipo)}">`
     + `<header><a class="titulo" href="#${e(id)}">${e(titulo)}</a><span class="edad">${e(antiguedad(t.antiguedadMs))}</span></header>`
-    + (detalle ? `<div class="detalle">${detalle}</div>` : "")
+    + `<div class="detalle"><div class="detalle-cab"><p class="detalle-titulo">${e(titulo)}</p>`
+    + `<p class="detalle-meta">${e(cliente)} · ${e(antiguedad(t.antiguedadMs))}</p></div>${detalle}</div>`
     + acciones
     + `<p class="motivo" role="alert" hidden></p>`
     + `</article>`;

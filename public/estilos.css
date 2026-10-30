@@ -88,6 +88,7 @@ section[data-franja="ahora"] .tarjeta { border-left-color: var(--urgente); }
 
 .detalle { margin-top: 0.4rem; color: var(--tinta); overflow-wrap: anywhere; }
 .detalle p { margin: 0.3rem 0; }
+.detalle-cab { display: none; }
 .resumen { color: var(--tinta-suave); }
 .checks { font-size: 0.9375rem; }
 .archivos { margin: 0.3rem 0; padding-left: 1.1rem; font: 0.8125rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--tinta-suave); }
@@ -148,6 +149,10 @@ button.armado { background: var(--urgente); border-color: var(--urgente); color:
     border-radius: 6px;
     z-index: 2;
   }
+  .detalle-cab { display: block; margin-bottom: 0.6rem; }
+  .detalle-titulo { font-size: 1.125rem; font-weight: 600; margin: 0; }
+  .detalle-meta { color: var(--tinta-suave); font-size: 0.875rem; margin: 0.1rem 0 0; }
+
   .panel-vacio {
     display: block;
     position: fixed;
