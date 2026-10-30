@@ -39,8 +39,17 @@ function enlace(texto: string, url: string): string {
   return `<a class="boton" href="${e(url)}" target="_blank" rel="noopener noreferrer">${e(texto)}</a>`;
 }
 
+// Por hostname exacto: con startsWith, https://wa.me.evil.tld o https://wa.me@evil.tld decían "Abrir WhatsApp".
+function esWhatsApp(url: string): boolean {
+  try {
+    return new URL(url).hostname === "wa.me";
+  } catch {
+    return false;
+  }
+}
+
 function textoLinkComercial(url: string): string {
-  if (url.startsWith("https://wa.me")) return "Abrir WhatsApp";
+  if (esWhatsApp(url)) return "Abrir WhatsApp";
   if (url.startsWith("mailto:")) return "Abrir mail";
   return "Abrir enlace";
 }

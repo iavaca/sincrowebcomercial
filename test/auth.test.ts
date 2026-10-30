@@ -8,6 +8,7 @@ import {
   USUARIO_PERMITIDO,
   abrir,
   abrirEstado,
+  sellar,
   sellarEstado,
   tokenVigente,
   type Env,
@@ -236,6 +237,46 @@ describe("POST /api/logout", () => {
     const c = setCookies(res).find((x) => x.startsWith(`${COOKIE}=`))!;
     expect(c).toMatch(new RegExp(`^${COOKIE}=;`));
     expect(atributos(c)).toContain("Max-Age=0");
+  });
+
+  const URL_REVOCAR = `https://api.github.com/applications/${ENV.GITHUB_APP_CLIENT_ID}/token`;
+  const sesionLogout: Sesion = { uid: USUARIO_PERMITIDO, token: "ghu_salir", tokenVence: Date.now() + 60 * MIN, refresh: "ghr_salir", refreshVence: Date.now() + 60 * MIN, inicio: Date.now() - MIN };
+  const pedirLogout = async () =>
+    logout(new Request(`${APP}/api/logout`, { method: "POST", headers: { origin: APP, cookie: `${COOKIE}=${await sellar(sesionLogout, CLAVE)}` } }));
+
+  it("con sesión válida revoca el token en GitHub y borra la cookie", async () => {
+    respuestas[URL_REVOCAR] = () => new Response(null, { status: 204 });
+    const res = await pedirLogout();
+    expect(res.status).toBe(204);
+    expect(setCookies(res).find((x) => x.startsWith(`${COOKIE}=;`))).toBeDefined();
+
+    expect(llamadas).toHaveLength(1);
+    const [l] = llamadas;
+    expect(l.url).toBe(URL_REVOCAR);
+    expect(l.init?.method).toBe("DELETE");
+    const headers = new Headers(l.init?.headers);
+    expect(headers.get("authorization")).toBe(`Basic ${btoa("Iv1.cliente:secreto_app")}`);
+    expect(headers.get("accept")).toBe("application/vnd.github+json");
+    expect(headers.get("x-github-api-version")).toBe("2022-11-28");
+    expect(JSON.parse(String(l.init?.body))).toEqual({ access_token: "ghu_salir" });
+  });
+
+  it("si la revocación falla (red o status) igual borra la cookie", async () => {
+    for (const r of [() => { throw new Error("red caída"); }, () => json({ message: "ghu_salir" }, 422)]) {
+      respuestas[URL_REVOCAR] = r;
+      const res = await pedirLogout();
+      expect(res.status).toBe(204);
+      expect(setCookies(res).find((x) => x.startsWith(`${COOKIE}=;`))).toBeDefined();
+    }
+    expect(llamadas).toHaveLength(2);
+  });
+
+  it("sin cookie o con cookie inválida no llama a GitHub", async () => {
+    for (const headers of [{ origin: APP }, { origin: APP, cookie: `${COOKIE}=basura` }] as Record<string, string>[]) {
+      const res = await logout(new Request(`${APP}/api/logout`, { method: "POST", headers }));
+      expect(res.status).toBe(204);
+    }
+    expect(llamadas).toHaveLength(0);
   });
 
   it("con Origin ajeno o sin Origin → 403 y no toca la cookie", async () => {

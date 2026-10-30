@@ -49,6 +49,14 @@ describe("renderBandeja", () => {
     expect(html([issue({ cuerpo: "Link: mailto:a@b.com" })])).toContain(">Abrir mail<");
   });
 
+  it("dominios que solo empiezan como wa.me no dicen Abrir WhatsApp", () => {
+    for (const u of ["https://wa.me.evil.tld/549299", "https://wa.me@evil.tld/549299", "https://wa.mex.com/549299"]) {
+      const out = html([issue({ cuerpo: `Link: ${u}` })]);
+      expect(out).not.toContain("Abrir WhatsApp");
+      expect(out).toContain(">Abrir enlace<");
+    }
+  });
+
   it("no pone href si la url de un PR o aviso no está permitida", () => {
     const out = html([pr({ url: "javascript:alert(1)" })]);
     expect(out).not.toContain("javascript:");
