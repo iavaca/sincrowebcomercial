@@ -127,6 +127,20 @@ button.armado { background: var(--urgente); border-color: var(--urgente); color:
 .nota, .vacio { color: var(--tinta-suave); margin-top: 1.5rem; }
 .vacio { font-size: 1.125rem; color: var(--tinta); }
 
+.notas { list-style: none; margin: 0; padding: 0; }
+.nota-trabajo {
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-left-width: 4px;
+  border-radius: 6px;
+  padding: 0.6rem 0.875rem;
+  margin-bottom: 0.5rem;
+}
+.nota-trabajo[data-estado="abierta"] { border-left-color: var(--acento); }
+.nota-cab { display: flex; justify-content: space-between; gap: 0.75rem; align-items: baseline; }
+.nota-estado { margin: 0.2rem 0 0; font-size: 0.875rem; color: var(--tinta-suave); }
+.nota-trabajo[data-estado="abierta"] .nota-estado { color: var(--acento); font-weight: 600; }
+
 .panel-vacio { display: none; }
 
 @media (min-width: 900px) {

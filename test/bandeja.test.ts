@@ -70,6 +70,10 @@ describe("GET /api/bandeja", () => {
     const cuerpo = await res.text();
     expect(cuerpo).toMatch(/<section data-franja="|Nada pendiente\. Bien ahí\./);
     expect(cuerpo).not.toMatch(/<(html|body|script)/i);
+    expect(cuerpo).toContain('<section data-seccion="notas"><h2>Notas</h2>');
+    expect(cuerpo).toContain('href="https://github.com/iavaca/claude-agents/issues/42"');
+    expect(cuerpo).not.toContain('id="t=claude-agents-40"'); // nota con bandeja:mantenimiento: no es aviso
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(init.headers).toMatchObject({ authorization: "Bearer ghu_viejo" });
     expect(JSON.parse(init.body as string).query).toContain('repository(owner: "iavaca", name: "claude-agents")');
@@ -80,7 +84,8 @@ describe("GET /api/bandeja", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("application/json; charset=utf-8");
     const b = (await res.json()) as Record<string, unknown>;
-    expect(b).toEqual(expect.objectContaining({ ahora: expect.any(Array), hoy: expect.any(Array), cuando: expect.any(Array), truncado: false }));
+    expect(b).toEqual(expect.objectContaining({ ahora: expect.any(Array), hoy: expect.any(Array), cuando: expect.any(Array), truncado: false, notas: expect.any(Array) }));
+    expect((b.notas as { cliente: string }[]).map((g) => g.cliente)).toEqual(["ferreteria-ejemplo", "sincroweb"]);
   });
 
   it("token por vencer → refresca, usa el token nuevo y manda la cookie nueva", async () => {

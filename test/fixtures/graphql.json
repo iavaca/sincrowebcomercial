@@ -19,9 +19,18 @@
         ]
       },
       "mantenimiento": {
-        "totalCount": 1,
+        "totalCount": 2,
         "nodes": [
-          { "number": 7, "title": "Sitio caído de Ferretería Ejemplo", "body": "", "createdAt": "2026-10-30T08:00:00Z", "url": "https://github.com/iavaca/claude-agents/issues/7", "labels": { "nodes": [{ "name": "bandeja:mantenimiento" }, { "name": "cliente:ferreteria-ejemplo" }, { "name": "nivel:rojo" }] } }
+          { "number": 7, "title": "Sitio caído de Ferretería Ejemplo", "body": "", "createdAt": "2026-10-30T08:00:00Z", "url": "https://github.com/iavaca/claude-agents/issues/7", "labels": { "nodes": [{ "name": "bandeja:mantenimiento" }, { "name": "cliente:ferreteria-ejemplo" }, { "name": "nivel:rojo" }] } },
+          { "number": 40, "title": "ferreteria-ejemplo · renové el SSL (2026-10-31)", "body": "## Hecho\n- [x] SSL\n## Pendiente\n- [ ] revisar DNS", "createdAt": "2026-10-31T10:00:00Z", "url": "https://github.com/iavaca/claude-agents/issues/40", "labels": { "nodes": [{ "name": "bandeja:mantenimiento" }, { "name": "bandeja:nota" }, { "name": "cliente:ferreteria-ejemplo" }] } }
+        ]
+      },
+      "notas": {
+        "totalCount": 3,
+        "nodes": [
+          { "number": 42, "title": "ferreteria-ejemplo · catálogo nuevo (2026-11-01)", "body": "## Hecho\n- [x] subí fotos\n## Pendiente\n- [ ] precios\n- [ ] envíos", "url": "https://github.com/iavaca/claude-agents/issues/42", "state": "OPEN", "updatedAt": "2026-11-01T18:00:00Z", "labels": { "nodes": [{ "name": "bandeja:nota" }, { "name": "cliente:ferreteria-ejemplo" }] } },
+          { "number": 41, "title": "sincroweb · ordené los agentes (2026-10-31)", "body": "## Hecho\n- [x] todo", "url": "https://github.com/iavaca/claude-agents/issues/41", "state": "CLOSED", "updatedAt": "2026-10-31T20:00:00Z", "labels": { "nodes": [{ "name": "bandeja:nota" }, { "name": "cliente:sincroweb" }] } },
+          { "number": 40, "title": "ferreteria-ejemplo · renové el SSL (2026-10-31)", "body": "## Hecho\n- [x] SSL\n## Pendiente\n- [ ] revisar DNS", "url": "https://github.com/iavaca/claude-agents/issues/40", "state": "OPEN", "updatedAt": "2026-10-31T12:00:00Z", "labels": { "nodes": [{ "name": "bandeja:mantenimiento" }, { "name": "bandeja:nota" }, { "name": "cliente:ferreteria-ejemplo" }] } }
         ]
       }
     },

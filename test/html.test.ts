@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderBandeja } from "../lib/html.js";
 import { armarBandeja } from "../lib/clasificar.js";
 import { AGENTES } from "../lib/acciones.js";
-import type { Bandeja, Grupo, IssueItem, PrItem, Tarjeta } from "../lib/tipos.js";
+import type { Bandeja, Grupo, IssueItem, Nota, PrItem, Tarjeta } from "../lib/tipos.js";
 
 const ahora = new Date("2026-11-02T12:00:00Z");
 const horas = (n: number) => new Date(ahora.getTime() - n * 3_600_000).toISOString();
@@ -18,7 +18,12 @@ function pr(o: Partial<PrItem> = {}): PrItem {
     sha: SHA, mergeable: "MERGEABLE", checks: "SUCCESS", archivos: [], archivosTotal: 0, borrador: false, ...o };
 }
 const html = (items: (IssueItem | PrItem)[], truncado = false) => renderBandeja(armarBandeja(items, ahora, truncado), ahora);
-const vacia: Bandeja = { ahora: [], hoy: [], cuando: [], primerosRestantes: 0, truncado: false };
+const vacia: Bandeja = { ahora: [], hoy: [], cuando: [], primerosRestantes: 0, truncado: false, notas: [] };
+function nota(o: Partial<Nota> = {}): Nota {
+  return { numero: ++seq, titulo: "cecal · arreglé el form (2026-11-02)", url: URL_GH, cliente: "cecal", abierta: true, actualizado: horas(3), pendientes: 0, ...o };
+}
+const conNotas = (notas: Nota[], items: (IssueItem | PrItem)[] = []) => renderBandeja(armarBandeja(items, ahora, false, notas), ahora);
+const seccionNotas = (out: string) => /<section data-seccion="notas">.*<\/section>$/s.exec(out)![0];
 
 describe("renderBandeja", () => {
   it("escapa título y cuerpo con HTML", () => {
@@ -171,5 +176,58 @@ describe("renderBandeja", () => {
     expect(detalle).toContain("Caído &lt;b&gt;web&lt;/b&gt;");
     expect(detalle).toContain("cecal · hace 3 h");
     expect(detalle).not.toContain("<b>");
+  });
+});
+
+describe("renderBandeja: notas", () => {
+  it("la sección Notas se ve siempre, también con la bandeja vacía y sin notas", () => {
+    const sinNada = renderBandeja(vacia, ahora);
+    expect(sinNada).toContain("Nada pendiente. Bien ahí.");
+    expect(sinNada).toContain('<section data-seccion="notas"><h2>Notas</h2><p class="nota">Todavía no hay notas de trabajo.</p></section>');
+    const out = conNotas([nota()]);
+    expect(out).toContain("Nada pendiente. Bien ahí.");
+    expect(seccionNotas(out)).toContain("<h3>cecal</h3>");
+  });
+
+  it("va después de las franjas y no es una tarjeta ni tiene botones", () => {
+    const out = conNotas([nota()], [pr()]);
+    expect(out.indexOf('data-franja="cuando"')).toBeLessThan(out.indexOf('data-seccion="notas"'));
+    const s = seccionNotas(out);
+    expect(s).not.toMatch(/<(button|select|input|form|article)/);
+  });
+
+  it("título como link a GitHub en pestaña nueva; abierta 'con pendientes · N', cerrada 'terminada'", () => {
+    const s = seccionNotas(conNotas([
+      nota({ numero: 51, titulo: "Abierta", pendientes: 2, url: "https://github.com/iavaca/claude-agents/issues/51" }),
+      nota({ numero: 52, titulo: "Una sola", pendientes: 1 }),
+      nota({ numero: 53, titulo: "Cerrada", abierta: false, pendientes: 3 }),
+    ]));
+    expect(s).toContain('<a class="titulo" href="https://github.com/iavaca/claude-agents/issues/51" target="_blank" rel="noopener noreferrer">Abierta</a>');
+    expect(s).toContain("con pendientes · 2 pendientes");
+    expect(s).toContain("con pendientes · 1 pendiente<");
+    expect(s).toMatch(/data-estado="terminada">.*Cerrada.*<p class="nota-estado">terminada<\/p>/);
+  });
+
+  it("fecha relativa en la última semana y AAAA-MM-DD (hora argentina) si es más vieja", () => {
+    const s = seccionNotas(conNotas([
+      nota({ actualizado: horas(5) }),
+      nota({ actualizado: "2026-10-20T02:00:00Z" }), // 19/10 23 h en Argentina
+    ]));
+    expect(s).toContain('<span class="edad">hace 5 h</span>');
+    expect(s).toContain('<span class="edad">2026-10-19</span>');
+  });
+
+  it("escapa título y cliente; links que no son https://github.com/ quedan como texto", () => {
+    const s = seccionNotas(conNotas([
+      nota({ titulo: "<img src=x onerror=alert(1)>", cliente: '<b>"x"</b>', url: "javascript:alert(1)" }),
+      nota({ titulo: "evil", url: "https://github.com.evil.tld/x" }),
+      nota({ titulo: "http", url: "http://github.com/x" }),
+    ]));
+    expect(s).not.toContain("<img");
+    expect(s).not.toContain("<b>");
+    expect(s).toContain("&lt;img src=x");
+    expect(s).toContain("<h3>&lt;b&gt;&quot;x&quot;&lt;/b&gt;</h3>");
+    expect(s).not.toContain("href=");
+    expect(s).toContain('<span class="titulo">evil</span>');
   });
 });

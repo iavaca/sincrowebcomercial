@@ -17,6 +17,12 @@ describe("CONSULTA", () => {
     expect(CONSULTA).toContain("issues: issues(states: OPEN, first: 100) { totalCount nodes {");
     expect(CONSULTA).not.toContain("... on ");
   });
+
+  it("trae las notas (abiertas y cerradas, últimas 50 por actualización) en la misma consulta", () => {
+    expect(CONSULTA.match(/query /g)).toHaveLength(1);
+    expect(CONSULTA).toMatch(/agentes: repository\(owner: "iavaca", name: "claude-agents"\) \{[^]*notas: issues\(labels: \["bandeja:nota"\], states: \[OPEN, CLOSED\], first: 50, orderBy: \{ field: UPDATED_AT, direction: DESC \}\)[^]*pedidos:/);
+    expect(CONSULTA).toMatch(/notas: [^]*number title body url state updatedAt labels\(first: 20\)/);
+  });
 });
 
 describe("normalizar", () => {
@@ -36,6 +42,33 @@ describe("normalizar", () => {
       creado: "2026-10-30T08:00:00Z", url: "https://github.com/iavaca/claude-agents/issues/7",
       labels: ["bandeja:mantenimiento", "cliente:ferreteria-ejemplo", "nivel:rojo"],
     });
+  });
+
+  it("devuelve las notas aparte, con cliente, estado, fecha y casillas sin tildar", () => {
+    const { notas } = normalizar(datos());
+    expect(notas).toEqual([
+      { numero: 42, titulo: "ferreteria-ejemplo · catálogo nuevo (2026-11-01)", url: "https://github.com/iavaca/claude-agents/issues/42",
+        cliente: "ferreteria-ejemplo", abierta: true, actualizado: "2026-11-01T18:00:00Z", pendientes: 2 },
+      expect.objectContaining({ numero: 41, cliente: "sincroweb", abierta: false, pendientes: 0 }),
+      expect.objectContaining({ numero: 40, cliente: "ferreteria-ejemplo", abierta: true, pendientes: 1 }),
+    ]);
+  });
+
+  it("un issue con bandeja:nota y bandeja:mantenimiento (o comercial) es solo nota, nunca aviso", () => {
+    const d = datos();
+    d.agentes.comercial.nodes[0].labels.nodes.push({ name: "bandeja:nota" });
+    const { items, notas } = normalizar(d);
+    expect(items.some((i) => i.numero === 40 || i.numero === 5)).toBe(false);
+    expect(notas.some((n) => n.numero === 40)).toBe(true);
+  });
+
+  it("nota sin cliente:* → sin-cliente; más notas que las traídas no marca truncado", () => {
+    const d = datos();
+    d.agentes.notas.nodes[0].labels.nodes = [{ name: "bandeja:nota" }];
+    d.agentes.notas.totalCount = 80;
+    const r = normalizar(d);
+    expect(r.notas[0].cliente).toBe("sin-cliente");
+    expect(r.truncado).toBe(false);
   });
 
   it("deja afuera los issues de sincroweb-pedidos sin cliente:*", () => {
@@ -87,6 +120,12 @@ describe("normalizar", () => {
     const e = datos();
     delete e.agentes.mantenimiento;
     expect(() => normalizar(e)).toThrow(/respuesta_invalida/);
+    const g = datos();
+    delete g.agentes.notas;
+    expect(() => normalizar(g)).toThrow(/respuesta_invalida/);
+    const h = datos();
+    delete h.agentes.notas.nodes[0].state;
+    expect(() => normalizar(h)).toThrow(/respuesta_invalida/);
     const f = datos();
     f.pedidos.issues.totalCount = "2";
     expect(() => normalizar(f)).toThrow(/respuesta_invalida/);

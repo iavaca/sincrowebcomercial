@@ -9,4 +9,7 @@ export type TipoTarjeta = "comercial" | "pr" | "pedido" | "aviso";
 export type Subtipo = "primer-contacto" | "seguimiento" | "respondio" | "esperando";
 export type Tarjeta = { id: string; tipo: TipoTarjeta; subtipo?: Subtipo; cliente: string; franja: Franja; antiguedadMs: number; items: Item[]; link?: string };
 export type Grupo = { cliente: string; tarjetas: Tarjeta[] };
-export type Bandeja = { ahora: Grupo[]; hoy: Grupo[]; cuando: Grupo[]; primerosRestantes: number; truncado: boolean };
+// Nota de trabajo: no es un pendiente de las franjas, se muestra siempre en su propia sección.
+export type Nota = { numero: number; titulo: string; url: string; cliente: string; abierta: boolean; actualizado: string; pendientes: number };
+export type GrupoNotas = { cliente: string; notas: Nota[] };
+export type Bandeja = { ahora: Grupo[]; hoy: Grupo[]; cuando: Grupo[]; primerosRestantes: number; truncado: boolean; notas: GrupoNotas[] };
