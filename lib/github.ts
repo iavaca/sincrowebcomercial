@@ -1,8 +1,10 @@
-import type { Checks, IssueItem, Item, PrItem, Repo } from "./tipos.js";
+import type { Checks, IssueItem, Item, Nota, PrItem, Repo } from "./tipos.js";
 
 const TIMEOUT_MS = 8000;
 const MAX_RESULTADOS = 100;
 const MAX_ARCHIVOS = 20;
+const MAX_NOTAS = 50;
+const LABEL_NOTA = "bandeja:nota";
 const API = "https://api.github.com";
 
 const CAMPOS_ISSUE = "number title body createdAt url labels(first: 20) { nodes { name } }";
@@ -14,6 +16,10 @@ const CAMPOS_PR = `number title body createdAt url isDraft headRefOid mergeable
 const bloque = (alias: string, conexion: string, filtro: string, campos: string) =>
   `${alias}: ${conexion}(states: OPEN, first: ${MAX_RESULTADOS}${filtro}) { totalCount nodes { ${campos} } }`;
 
+// Las notas traen abiertas y cerradas, las más recientes primero; no cuentan para `truncado` (no son pendientes).
+const BLOQUE_NOTAS = `notas: issues(labels: ["${LABEL_NOTA}"], states: [OPEN, CLOSED], first: ${MAX_NOTAS}, orderBy: { field: UPDATED_AT, direction: DESC }) {
+      totalCount nodes { number title body url state updatedAt labels(first: 20) { nodes { name } } } }`;
+
 // Una sola request leyendo cada repositorio directo: `search` devuelve 0 resultados con el token de usuario de la GitHub App.
 // Comercial y mantenimiento van en bloques separados, uno por bandeja; un issue con las dos labels se deduplica al normalizar.
 export const CONSULTA = `query Bandeja {
@@ -21,6 +27,7 @@ export const CONSULTA = `query Bandeja {
     ${bloque("prs", "pullRequests", "", CAMPOS_PR)}
     ${bloque("comercial", "issues", ', labels: ["bandeja:comercial"]', CAMPOS_ISSUE)}
     ${bloque("mantenimiento", "issues", ', labels: ["bandeja:mantenimiento"]', CAMPOS_ISSUE)}
+    ${BLOQUE_NOTAS}
   }
   pedidos: repository(owner: "iavaca", name: "sincroweb-pedidos") {
     ${bloque("issues", "issues", "", CAMPOS_ISSUE)}
@@ -80,17 +87,37 @@ function basePr(n: Record<string, unknown>): PrItem {
   };
 }
 
-function baseIssue(n: Record<string, unknown>, repo: Repo): IssueItem {
+function leerLabels(n: Record<string, unknown>): string[] {
   const nodos = lista(esObjeto(n.labels) ? n.labels.nodes : undefined, "labels");
+  return nodos.map((l) => texto(esObjeto(l) ? l.name : undefined, "label"));
+}
+
+function baseIssue(n: Record<string, unknown>, repo: Repo): IssueItem {
   return {
     clase: "issue",
     repo,
     numero: numero(n.number, "number"),
     titulo: texto(n.title, "title"),
     cuerpo: typeof n.body === "string" ? n.body : "",
-    labels: nodos.map((l) => texto(esObjeto(l) ? l.name : undefined, "label")),
+    labels: leerLabels(n),
     creado: texto(n.createdAt, "createdAt"),
     url: texto(n.url, "url"),
+  };
+}
+
+// Casillas sin tildar del cuerpo ("- [ ] algo"), en cualquier sección.
+const contarPendientes = (cuerpo: string) => (cuerpo.match(/^\s*[-*+] \[ \]/gm) ?? []).length;
+
+function baseNota(n: Record<string, unknown>): Nota {
+  const cliente = leerLabels(n).find((l) => l.startsWith("cliente:"))?.slice("cliente:".length);
+  return {
+    numero: numero(n.number, "number"),
+    titulo: texto(n.title, "title"),
+    url: texto(n.url, "url"),
+    cliente: cliente || "sin-cliente",
+    abierta: texto(n.state, "state") === "OPEN",
+    actualizado: texto(n.updatedAt, "updatedAt"),
+    pendientes: contarPendientes(typeof n.body === "string" ? n.body : ""),
   };
 }
 
@@ -113,13 +140,14 @@ function leerBusqueda(repo: Record<string, unknown>, alias: string): Busqueda {
 }
 
 // Una respuesta incompleta lanza: devolver [] se leería como "no hay nada pendiente".
-export function normalizar(data: unknown): { items: Item[]; truncado: boolean } {
+export function normalizar(data: unknown): { items: Item[]; truncado: boolean; notas: Nota[] } {
   if (!esObjeto(data)) invalido("data");
   const repoAgentes = leerRepositorio(data, "agentes");
   const repoPedidos = leerRepositorio(data, "pedidos");
   const prs = leerBusqueda(repoAgentes, "prs");
   const comercial = leerBusqueda(repoAgentes, "comercial");
   const mantenimiento = leerBusqueda(repoAgentes, "mantenimiento");
+  const notas = leerBusqueda(repoAgentes, "notas");
   const pedidos = leerBusqueda(repoPedidos, "issues");
 
   const prItems = prs.nodos.map(basePr);
@@ -128,13 +156,14 @@ export function normalizar(data: unknown): { items: Item[]; truncado: boolean } 
   for (const n of [...comercial.nodos, ...mantenimiento.nodos]) {
     const item = baseIssue(n, "claude-agents");
     if (vistos.has(item.numero)) continue; // un issue con las dos labels sale en ambas búsquedas
+    if (item.labels.includes(LABEL_NOTA)) continue; // una nota nunca es aviso ni comercial: gana nota
     vistos.add(item.numero);
     agentes.push(item);
   }
   const deClientes = pedidos.nodos.map((n) => baseIssue(n, "sincroweb-pedidos")).filter((i) => i.labels.some((l) => l.startsWith("cliente:")));
 
   const truncado = [prs, comercial, mantenimiento, pedidos].some((b) => b.truncada) || prItems.some((p) => p.archivosTotal > MAX_ARCHIVOS);
-  return { items: [...prItems, ...agentes, ...deClientes], truncado };
+  return { items: [...prItems, ...agentes, ...deClientes], truncado, notas: notas.nodos.map(baseNota) };
 }
 
 export async function llamarGitHub(token: string, metodo: string, ruta: string, cuerpo?: unknown): Promise<Response> {

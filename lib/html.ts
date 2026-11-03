@@ -1,6 +1,6 @@
 import { AGENTES } from "./acciones.js";
-import { escaparHtml, esLinkPermitido, resumen } from "./texto.js";
-import type { Bandeja, Checks, Grupo, Item, PrItem, Tarjeta } from "./tipos.js";
+import { escaparHtml, esLinkGitHub, esLinkPermitido, resumen } from "./texto.js";
+import type { Bandeja, Checks, Grupo, GrupoNotas, Item, Nota, PrItem, Tarjeta } from "./tipos.js";
 
 const FRANJAS = [
   ["ahora", "Ahora"],
@@ -10,6 +10,9 @@ const FRANJAS = [
 
 const MAX_RESUMEN = 300;
 const MAX_ARCHIVOS = 20;
+const NOTA_RELATIVA_MS = 7 * 86_400_000;
+// AAAA-MM-DD en hora argentina: en UTC, una nota de las 22 h saldría con el día siguiente.
+const FECHA_AR = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit" });
 
 const e = escaparHtml;
 
@@ -162,7 +165,33 @@ function renderFranja(grupos: Grupo[]): string {
   return normales.map(renderGrupo).join("") + plegado;
 }
 
-export function renderBandeja(b: Bandeja, _ahora: Date): string {
+function fechaNota(actualizado: string, ahora: Date): string {
+  const t = new Date(actualizado).getTime();
+  if (!Number.isFinite(t)) return "";
+  const ms = ahora.getTime() - t;
+  return ms >= 0 && ms < NOTA_RELATIVA_MS ? antiguedad(ms) : FECHA_AR.format(t);
+}
+
+function renderNota(n: Nota, ahora: Date): string {
+  const titulo = esLinkGitHub(n.url)
+    ? `<a class="titulo" href="${e(n.url)}" target="_blank" rel="noopener noreferrer">${e(n.titulo)}</a>`
+    : `<span class="titulo">${e(n.titulo)}</span>`;
+  const cuantas = n.abierta && n.pendientes > 0 ? ` · ${n.pendientes} ${n.pendientes === 1 ? "pendiente" : "pendientes"}` : "";
+  const estado = n.abierta ? "con pendientes" : "terminada";
+  return `<li class="nota-trabajo" data-estado="${n.abierta ? "abierta" : "terminada"}">`
+    + `<div class="nota-cab">${titulo}<span class="edad">${e(fechaNota(n.actualizado, ahora))}</span></div>`
+    + `<p class="nota-estado">${estado}${cuantas}</p></li>`;
+}
+
+// Siempre visible, aunque no haya pendientes ni notas: es la memoria de lo que se trabajó.
+function renderNotas(grupos: GrupoNotas[], ahora: Date): string {
+  const cuerpo = grupos.length === 0
+    ? `<p class="nota">Todavía no hay notas de trabajo.</p>`
+    : grupos.map((g) => `<h3>${e(g.cliente)}</h3><ul class="notas">${g.notas.map((n) => renderNota(n, ahora)).join("")}</ul>`).join("");
+  return `<section data-seccion="notas"><h2>Notas</h2>${cuerpo}</section>`;
+}
+
+export function renderBandeja(b: Bandeja, ahora: Date): string {
   const secciones = FRANJAS
     .filter(([f]) => b[f].length > 0)
     .map(([f, titulo]) => `<section data-franja="${f}"><h2>${titulo}</h2>${renderFranja(b[f])}</section>`);
@@ -172,5 +201,5 @@ export function renderBandeja(b: Bandeja, _ahora: Date): string {
   if (vacia && b.primerosRestantes === 0 && !b.truncado) notas.push(`<p class="vacio">Nada pendiente. Bien ahí.</p>`);
   if (b.primerosRestantes > 0) notas.push(`<p class="nota">y ${b.primerosRestantes} primeros contactos más en la cola</p>`);
   if (b.truncado) notas.push(`<p class="nota">Hay más en GitHub de lo que entra acá</p>`);
-  return secciones.join("") + notas.join("");
+  return secciones.join("") + notas.join("") + renderNotas(b.notas, ahora);
 }

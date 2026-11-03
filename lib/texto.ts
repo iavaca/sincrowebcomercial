@@ -18,6 +18,13 @@ export function esLinkPermitido(url: string): boolean {
   }
 }
 
+// Por hostname exacto, como en esWhatsApp: https://github.com.evil.tld o https://github.com@evil.tld no pasan.
+export function esLinkGitHub(url: string): boolean {
+  if (!esLinkPermitido(url)) return false;
+  const u = new URL(url);
+  return u.protocol === "https:" && u.hostname === "github.com" && u.username === "" && u.password === "" && u.port === "";
+}
+
 // Solo cuenta la primera línea "Link: <url>" sin nada delante (una línea citada con ">" no cuenta).
 export function extraerLink(cuerpo: string): string | undefined {
   for (const linea of cuerpo.split(/\r\n|\r|\n/)) {

@@ -37,9 +37,9 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const data = await consultarGraphQL(vigente.sesion.token, CONSULTA);
-    const { items, truncado } = normalizar(data);
+    const { items, truncado, notas } = normalizar(data);
     const json = new URL(request.url).searchParams.get("formato") === "json";
-    return responderBandeja(armarBandeja(items, new Date(ahora), truncado), new Date(ahora), json, cookies);
+    return responderBandeja(armarBandeja(items, new Date(ahora), truncado, notas), new Date(ahora), json, cookies);
   } catch (error) {
     const status = statusDeError(error);
     if (status !== undefined && rechazoPorStatus(status)?.motivo === "sesion_vencida") {

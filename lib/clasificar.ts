@@ -1,7 +1,8 @@
 import { extraerLink } from "./texto.js";
-import type { Bandeja, Franja, Grupo, IssueItem, Item, Subtipo, Tarjeta } from "./tipos.js";
+import type { Bandeja, Franja, Grupo, GrupoNotas, IssueItem, Item, Nota, Subtipo, Tarjeta } from "./tipos.js";
 
 const LOTE_PRIMEROS_CONTACTOS = 5;
+const NOTAS_POR_CLIENTE = 5;
 const SEPARADOR_TITULO = " · ";
 const LABELS_PEDIDO_EXCLUIDOS = ["extra cotizado", "hecho", "actualizacion"];
 
@@ -97,7 +98,23 @@ function agrupar(tarjetas: Tarjeta[]): Grupo[] {
   return [...porCliente].map(([cliente, ts]) => ({ cliente, tarjetas: ts })).sort((a, b) => masViejoPrimero(a.tarjetas[0], b.tarjetas[0]));
 }
 
-export function armarBandeja(items: Item[], ahora: Date, truncado: boolean): Bandeja {
+const actualizada = (n: Nota) => new Date(n.actualizado).getTime();
+
+// Las últimas notas de cada cliente: abiertas primero y, dentro de cada estado, la más reciente primero.
+// Los clientes se ordenan por su nota más reciente.
+export function agruparNotas(notas: Nota[]): GrupoNotas[] {
+  const porCliente = new Map<string, Nota[]>();
+  for (const n of notas) porCliente.set(n.cliente, [...(porCliente.get(n.cliente) ?? []), n]);
+  const grupos = [...porCliente].map(([cliente, ns]) => {
+    const ultimas = [...ns].sort((a, b) => actualizada(b) - actualizada(a) || b.numero - a.numero).slice(0, NOTAS_POR_CLIENTE);
+    return { cliente, reciente: actualizada(ultimas[0]), notas: ultimas.sort((a, b) => Number(b.abierta) - Number(a.abierta)) };
+  });
+  return grupos
+    .sort((a, b) => b.reciente - a.reciente || a.cliente.localeCompare(b.cliente))
+    .map(({ cliente, notas: ns }) => ({ cliente, notas: ns }));
+}
+
+export function armarBandeja(items: Item[], ahora: Date, truncado: boolean, notas: Nota[] = []): Bandeja {
   const todas = fusionarAvisos(items.map((i) => clasificar(i, ahora)).filter((t): t is Tarjeta => t !== null));
 
   const primeros = todas.filter((t) => t.subtipo === "primer-contacto").sort(masViejoPrimero);
@@ -105,5 +122,5 @@ export function armarBandeja(items: Item[], ahora: Date, truncado: boolean): Ban
   const visibles = todas.filter((t) => !fuera.has(t));
 
   const franja = (f: Franja) => agrupar(visibles.filter((t) => t.franja === f));
-  return { ahora: franja("ahora"), hoy: franja("hoy"), cuando: franja("cuando"), primerosRestantes: fuera.size, truncado };
+  return { ahora: franja("ahora"), hoy: franja("hoy"), cuando: franja("cuando"), primerosRestantes: fuera.size, truncado, notas: agruparNotas(notas) };
 }

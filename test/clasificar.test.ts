@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { armarBandeja, clasificar } from "../lib/clasificar.js";
-import type { IssueItem, PrItem } from "../lib/tipos.js";
+import { agruparNotas, armarBandeja, clasificar } from "../lib/clasificar.js";
+import type { IssueItem, Nota, PrItem } from "../lib/tipos.js";
 
 const ahora = new Date("2026-11-02T12:00:00Z");
 const dias = (n: number) => new Date(ahora.getTime() - n * 86_400_000).toISOString();
@@ -141,5 +141,31 @@ describe("armarBandeja", () => {
     const b = armarBandeja([ped, p, rojo, a1, a2], ahora, false);
     const ids = [...b.ahora, ...b.hoy, ...b.cuando].flatMap((g) => g.tarjetas.map((t) => t.id)).sort();
     expect(ids).toEqual([`claude-agents#${p.numero}`, `claude-agents#${rojo.numero}`, "aviso:cecal", `sincroweb-pedidos#${ped.numero}`].sort());
+  });
+});
+
+describe("agruparNotas", () => {
+  const nota = (cliente: string, dia: number, abierta = true): Nota =>
+    ({ numero: ++seq, titulo: `${cliente} · d${dia}`, url: "https://github.com/x/y/issues/1", cliente, abierta, actualizado: dias(dia), pendientes: 0 });
+
+  it("por cliente, las 5 más recientes (abiertas y cerradas), abiertas primero y por actualización", () => {
+    const g = agruparNotas([
+      nota("cecal", 1, false), nota("cecal", 2), nota("cecal", 3, false), nota("cecal", 4), nota("cecal", 5), nota("cecal", 6),
+    ]);
+    expect(g).toHaveLength(1);
+    expect(g[0].cliente).toBe("cecal");
+    expect(g[0].notas.map((n) => n.titulo)).toEqual(["cecal · d2", "cecal · d4", "cecal · d5", "cecal · d1", "cecal · d3"]);
+  });
+
+  it("los clientes se ordenan por su nota más reciente", () => {
+    const g = agruparNotas([nota("viejo", 9), nota("sincroweb", 1, false), nota("viejo", 3)]);
+    expect(g.map((x) => x.cliente)).toEqual(["sincroweb", "viejo"]);
+  });
+
+  it("armarBandeja incluye las notas agrupadas y no las mezcla con las franjas", () => {
+    const b = armarBandeja([], ahora, false, [nota("cecal", 1)]);
+    expect(b.notas).toEqual([{ cliente: "cecal", notas: [expect.objectContaining({ cliente: "cecal" })] }]);
+    expect([b.ahora, b.hoy, b.cuando]).toEqual([[], [], []]);
+    expect(armarBandeja([], ahora, false).notas).toEqual([]);
   });
 });
