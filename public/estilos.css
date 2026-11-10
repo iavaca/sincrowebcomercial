@@ -141,6 +141,20 @@ button.armado { background: var(--urgente); border-color: var(--urgente); color:
 .nota-estado { margin: 0.2rem 0 0; font-size: 0.875rem; color: var(--tinta-suave); }
 .nota-trabajo[data-estado="abierta"] .nota-estado { color: var(--acento); font-weight: 600; }
 
+.pestanas { display: flex; gap: 0.25rem; margin-top: 0.75rem; border-bottom: 1px solid var(--linea); }
+.pestanas button {
+  flex: 1;
+  justify-content: center;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--tinta-suave);
+  font-weight: 600;
+  padding: 0.4rem 0.5rem;
+}
+.pestanas button[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--acento); }
+
 .panel-vacio { display: none; }
 
 @media (min-width: 900px) {

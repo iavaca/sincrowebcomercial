@@ -14,6 +14,35 @@
   var refrescoEnCola = false;
   var cola = Promise.resolve();
   var armado = null; // { boton, texto, timer }
+  var CLAVE_PESTANA = 'bandeja-pestana';
+  var PESTANAS = ['mensajes', 'mantenimiento'];
+  var pestana = leerPestana();
+
+  function leerPestana() {
+    try {
+      var guardada = localStorage.getItem(CLAVE_PESTANA);
+      if (PESTANAS.indexOf(guardada) !== -1) return guardada;
+    } catch (e) { /* storage bloqueado: arranca en Mensajes */ }
+    return 'mensajes';
+  }
+
+  // Aplica la pestaña activa sobre el DOM actual (el fragmento llega con Mensajes abierta).
+  function aplicarPestana() {
+    PESTANAS.forEach(function (p) {
+      var tab = document.getElementById('tab-' + p);
+      var panel = document.getElementById('panel-' + p);
+      if (!tab || !panel) return;
+      tab.setAttribute('aria-selected', String(p === pestana));
+      tab.tabIndex = p === pestana ? 0 : -1;
+      panel.hidden = p !== pestana;
+    });
+  }
+
+  function elegirPestana(p) {
+    pestana = p;
+    try { localStorage.setItem(CLAVE_PESTANA, p); } catch (e) { /* sin storage: vale solo para esta sesión */ }
+    aplicarPestana();
+  }
 
   function hora(d) {
     return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -30,7 +59,7 @@
   }
 
   function botones() {
-    return lista.querySelectorAll('button, select, input');
+    return lista.querySelectorAll('button:not([role="tab"]), select, input');
   }
 
   function bloquear(si) {
@@ -54,7 +83,8 @@
     estado.textContent = 'Actualizada ' + hora(ultimaOk);
   }
 
-  function marcarSeleccion() {
+  // abrirPestana: solo al llegar o cambiar el hash; en los refrescos no se pisa la pestaña que eligió Iván.
+  function marcarSeleccion(abrirPestana) {
     var actual = lista.querySelector('.seleccionada');
     if (actual) actual.classList.remove('seleccionada');
     if (!location.hash) return;
@@ -62,7 +92,12 @@
     try { id = decodeURIComponent(location.hash.slice(1)); } catch (e) { return; }
     var tarjetas = lista.querySelectorAll('article');
     for (var i = 0; i < tarjetas.length; i++) {
-      if (tarjetas[i].id === id) { tarjetas[i].classList.add('seleccionada'); return; }
+      if (tarjetas[i].id === id) {
+        tarjetas[i].classList.add('seleccionada');
+        var panel = tarjetas[i].closest('[role="tabpanel"]');
+        if (abrirPestana === true && panel && panel.dataset.pestana !== pestana) elegirPestana(panel.dataset.pestana);
+        return;
+      }
     }
   }
 
@@ -74,11 +109,15 @@
   // El fragmento ya viene escapado desde /api/bandeja; es lo único que se inserta como HTML.
   function pintar(html) {
     if (html === ultimoHtml || editando()) return;
+    var teniaFoco = document.activeElement && document.activeElement.getAttribute('role') === 'tab' ? document.activeElement.id : null;
     var plantilla = document.createElement('template');
     plantilla.innerHTML = html;
     lista.replaceChildren(plantilla.content);
+    var primera = ultimoHtml === null;
     ultimoHtml = html;
-    marcarSeleccion();
+    aplicarPestana();
+    marcarSeleccion(primera);
+    if (teniaFoco) document.getElementById(teniaFoco).focus();
   }
 
   async function cargar() {
@@ -188,6 +227,8 @@
   }
 
   lista.addEventListener('click', function (ev) {
+    var tab = ev.target.closest('[role="tab"]');
+    if (tab && lista.contains(tab)) { elegirPestana(tab.dataset.pestana); return; }
     var boton = ev.target.closest('button');
     if (!boton || boton.disabled || !lista.contains(boton)) return;
 
@@ -225,7 +266,22 @@
     if (asignar) asignar.dataset.agente = ev.target.value;
   });
 
-  window.addEventListener('hashchange', marcarSeleccion);
+  lista.addEventListener('keydown', function (ev) {
+    var tab = ev.target.closest && ev.target.closest('[role="tab"]');
+    if (!tab) return;
+    var i = PESTANAS.indexOf(tab.dataset.pestana);
+    var destino;
+    if (ev.key === 'ArrowRight') destino = (i + 1) % PESTANAS.length;
+    else if (ev.key === 'ArrowLeft') destino = (i - 1 + PESTANAS.length) % PESTANAS.length;
+    else if (ev.key === 'Home') destino = 0;
+    else if (ev.key === 'End') destino = PESTANAS.length - 1;
+    else return;
+    ev.preventDefault();
+    elegirPestana(PESTANAS[destino]);
+    document.getElementById('tab-' + PESTANAS[destino]).focus();
+  });
+
+  window.addEventListener('hashchange', function () { marcarSeleccion(true); });
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') refrescar();
   });
