@@ -23,7 +23,8 @@ function nota(o: Partial<Nota> = {}): Nota {
   return { numero: ++seq, titulo: "cecal · arreglé el form (2026-11-02)", url: URL_GH, cliente: "cecal", abierta: true, actualizado: horas(3), pendientes: 0, ...o };
 }
 const conNotas = (notas: Nota[], items: (IssueItem | PrItem)[] = []) => renderBandeja(armarBandeja(items, ahora, false, notas), ahora);
-const seccionNotas = (out: string) => /<section data-seccion="notas">.*<\/section>$/s.exec(out)![0];
+const seccionNotas = (out: string) => /<section data-seccion="notas">.*?<\/section>/s.exec(out)![0];
+const panel = (out: string, p: "mensajes" | "mantenimiento") => new RegExp(`<div role="tabpanel" id="panel-${p}".*?(?=<div role="tabpanel"|$)`, "s").exec(out)![0];
 
 describe("renderBandeja", () => {
   it("escapa título y cuerpo con HTML", () => {
@@ -159,7 +160,7 @@ describe("renderBandeja", () => {
 
   it("bandeja vacía muestra 'Nada pendiente. Bien ahí.'", () => {
     expect(renderBandeja(vacia, ahora)).toContain("Nada pendiente. Bien ahí.");
-    expect(html([pr()])).not.toContain("Nada pendiente");
+    expect(panel(html([pr()]), "mantenimiento")).not.toContain("Nada pendiente");
   });
 
   it("atributos escapados: un nombre de cliente con comillas no rompe el id", () => {
@@ -229,5 +230,76 @@ describe("renderBandeja: notas", () => {
     expect(s).toContain("<h3>&lt;b&gt;&quot;x&quot;&lt;/b&gt;</h3>");
     expect(s).not.toContain("href=");
     expect(s).toContain('<span class="titulo">evil</span>');
+  });
+});
+
+describe("renderBandeja: pestañas", () => {
+  const mant = ["bandeja:mantenimiento", "nivel:amarillo", "cliente:cecal"];
+  const todo = () => html([
+    issue({ numero: 901 }),
+    issue({ numero: 902, titulo: "Beta · seguimiento 1" }),
+    pr({ numero: 903 }),
+    issue({ numero: 904, repo: "sincroweb-pedidos", titulo: "Pedido", labels: ["cliente:cecal"] }),
+    issue({ numero: 905, titulo: "SSL", labels: mant }),
+  ]);
+
+  it("tablist accesible con conteo por pestaña y solo Mensajes activa", () => {
+    const out = todo();
+    expect(out).toContain('role="tablist"');
+    expect(out).toMatch(/<button[^>]*role="tab" id="tab-mensajes" aria-controls="panel-mensajes" aria-selected="true" tabindex="0"[^>]*>Mensajes \(2\)<\/button>/);
+    expect(out).toMatch(/<button[^>]*role="tab" id="tab-mantenimiento" aria-controls="panel-mantenimiento" aria-selected="false" tabindex="-1"[^>]*>Mantenimiento \(3\)<\/button>/);
+    expect(out).toContain('id="panel-mensajes" aria-labelledby="tab-mensajes"');
+    expect(panel(out, "mensajes")).not.toMatch(/^[^>]*\bhidden\b/);
+    expect(panel(out, "mantenimiento")).toMatch(/^[^>]*\bhidden\b/);
+  });
+
+  it("cada tipo cae en su pestaña", () => {
+    const out = todo();
+    const m = panel(out, "mensajes");
+    const t = panel(out, "mantenimiento");
+    expect(m).toContain('id="t=claude-agents-901"');
+    expect(m).toContain('id="t=claude-agents-902"');
+    expect(m).not.toContain('data-tipo="pr"');
+    expect(m).not.toContain('data-tipo="pedido"');
+    expect(m).not.toContain('data-tipo="aviso"');
+    expect(t).toContain('data-tipo="pr"');
+    expect(t).toContain('data-tipo="pedido"');
+    expect(t).toContain('id="aviso-cecal"');
+    expect(t).not.toContain('data-tipo="comercial"');
+    expect(t).toContain('data-seccion="notas"');
+    expect(m).not.toContain('data-seccion="notas"');
+  });
+
+  it("conserva las franjas dentro de cada pestaña y oculta las vacías", () => {
+    const out = html([issue({ labels: ["bandeja:mantenimiento", "nivel:rojo", "cliente:cecal"], titulo: "Caído" }), issue({ titulo: "Beta · seguimiento 1", creado: horas(48) })]);
+    expect(panel(out, "mantenimiento")).toContain('data-franja="ahora"');
+    expect(panel(out, "mantenimiento")).not.toContain('data-franja="hoy"');
+    expect(panel(out, "mensajes")).toContain('data-franja="hoy"');
+    expect(panel(out, "mensajes")).not.toContain('data-franja="ahora"');
+  });
+
+  it("pestaña vacía muestra su propio 'Nada pendiente' y conteo 0", () => {
+    const soloPr = html([pr()]);
+    expect(panel(soloPr, "mensajes")).toContain("Nada pendiente. Bien ahí.");
+    expect(soloPr).toContain("Mensajes (0)");
+    const soloMensaje = html([issue()]);
+    expect(panel(soloMensaje, "mantenimiento")).toContain("Nada pendiente. Bien ahí.");
+    expect(panel(soloMensaje, "mantenimiento")).toContain('data-seccion="notas"');
+    expect(panel(soloMensaje, "mensajes")).not.toContain("Nada pendiente");
+  });
+
+  it("la nota de primeros contactos va en Mensajes y el aviso de truncado queda arriba, fuera de las pestañas", () => {
+    const out = renderBandeja({ ...vacia, primerosRestantes: 3, truncado: true }, ahora);
+    expect(panel(out, "mensajes")).toContain("y 3 primeros contactos más en la cola");
+    expect(panel(out, "mensajes")).not.toContain("Nada pendiente");
+    expect(panel(out, "mantenimiento")).not.toContain("y 3 primeros");
+    expect(out.indexOf("Hay más en GitHub")).toBeLessThan(out.indexOf('role="tablist"'));
+    expect(out.match(/Hay más en GitHub/g)).toHaveLength(1);
+  });
+
+  it("las esperando cuentan en Mensajes y siguen plegadas ahí", () => {
+    const out = html([issue({ labels: ["bandeja:comercial", "estado:enviado"], titulo: "Acme · seguimiento 1" })]);
+    expect(out).toContain("Mensajes (1)");
+    expect(panel(out, "mensajes")).toContain("<details");
   });
 });

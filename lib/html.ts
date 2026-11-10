@@ -191,15 +191,50 @@ function renderNotas(grupos: GrupoNotas[], ahora: Date): string {
   return `<section data-seccion="notas"><h2>Notas</h2>${cuerpo}</section>`;
 }
 
-export function renderBandeja(b: Bandeja, ahora: Date): string {
-  const secciones = FRANJAS
-    .filter(([f]) => b[f].length > 0)
-    .map(([f, titulo]) => `<section data-franja="${f}"><h2>${titulo}</h2>${renderFranja(b[f])}</section>`);
-  const vacia = secciones.length === 0;
+const PESTANAS = [
+  ["mensajes", "Mensajes"],
+  ["mantenimiento", "Mantenimiento"],
+] as const;
 
-  const notas: string[] = [];
-  if (vacia && b.primerosRestantes === 0 && !b.truncado) notas.push(`<p class="vacio">Nada pendiente. Bien ahí.</p>`);
-  if (b.primerosRestantes > 0) notas.push(`<p class="nota">y ${b.primerosRestantes} primeros contactos más en la cola</p>`);
-  if (b.truncado) notas.push(`<p class="nota">Hay más en GitHub de lo que entra acá</p>`);
-  return secciones.join("") + notas.join("") + renderNotas(b.notas, ahora);
+const filtrarGrupos = (grupos: Grupo[], esDeLaPestana: (t: Tarjeta) => boolean): Grupo[] =>
+  grupos
+    .map((g) => ({ ...g, tarjetas: g.tarjetas.filter(esDeLaPestana) }))
+    .filter((g) => g.tarjetas.length > 0);
+
+const contarTarjetas = (franjas: Grupo[][]): number =>
+  franjas.reduce((n, grupos) => n + grupos.reduce((m, g) => m + g.tarjetas.length, 0), 0);
+
+// Los paneles se renderizan los dos; el cliente muestra uno (app.js). Sin JS queda visible Mensajes.
+function renderPanel(pestana: (typeof PESTANAS)[number][0], activa: boolean, contenido: string): string {
+  return `<div role="tabpanel" id="panel-${pestana}" aria-labelledby="tab-${pestana}" data-pestana="${pestana}"${activa ? "" : " hidden"}>${contenido}</div>`;
+}
+
+export function renderBandeja(b: Bandeja, ahora: Date): string {
+  const porPestana = {
+    mensajes: (t: Tarjeta) => t.tipo === "comercial",
+    mantenimiento: (t: Tarjeta) => t.tipo !== "comercial",
+  };
+  const grupos = (p: keyof typeof porPestana) => FRANJAS.map(([f, titulo]) => ({ f, titulo, grupos: filtrarGrupos(b[f], porPestana[p]) }));
+  const franjas = (p: keyof typeof porPestana) => grupos(p)
+    .filter((x) => x.grupos.length > 0)
+    .map((x) => `<section data-franja="${x.f}"><h2>${x.titulo}</h2>${renderFranja(x.grupos)}</section>`);
+  const cuenta = (p: keyof typeof porPestana) => contarTarjetas(grupos(p).map((x) => x.grupos));
+
+  const mensajes = franjas("mensajes");
+  const mantenimiento = franjas("mantenimiento");
+  const sinMas = !b.truncado;
+
+  const notasMensajes: string[] = [];
+  if (mensajes.length === 0 && b.primerosRestantes === 0 && sinMas) notasMensajes.push(`<p class="vacio">Nada pendiente. Bien ahí.</p>`);
+  if (b.primerosRestantes > 0) notasMensajes.push(`<p class="nota">y ${b.primerosRestantes} primeros contactos más en la cola</p>`);
+  const notasMantenimiento: string[] = [];
+  if (mantenimiento.length === 0 && sinMas) notasMantenimiento.push(`<p class="vacio">Nada pendiente. Bien ahí.</p>`);
+
+  const aviso = b.truncado ? `<p class="nota">Hay más en GitHub de lo que entra acá</p>` : "";
+  const botones = PESTANAS.map(([p, titulo], i) =>
+    `<button type="button" role="tab" id="tab-${p}" aria-controls="panel-${p}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}" data-pestana="${p}">${titulo} (${cuenta(p)})</button>`);
+  return aviso
+    + `<div class="pestanas" role="tablist" aria-label="Secciones de la bandeja">${botones.join("")}</div>`
+    + renderPanel("mensajes", true, mensajes.join("") + notasMensajes.join(""))
+    + renderPanel("mantenimiento", false, mantenimiento.join("") + notasMantenimiento.join("") + renderNotas(b.notas, ahora));
 }
