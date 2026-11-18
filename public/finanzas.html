@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Finanzas</title>
+<link rel="stylesheet" href="/estilos.css?v=3">
+<script src="/finanzas.js?v=1" defer></script>
+</head>
+<body class="finanzas">
+<header class="barra">
+  <h1>Finanzas</h1>
+  <span id="estado" class="estado" aria-live="polite"></span>
+  <a class="boton" href="/">Bandeja</a>
+</header>
+<p id="aviso" class="aviso-conexion" role="status" hidden></p>
+<main id="finanzas" aria-busy="true">
+  <section class="saldo" aria-labelledby="saldo-titulo">
+    <h2>Saldo entre ustedes</h2>
+    <p id="saldo-titulo" class="saldo-titulo">Cargando…</p>
+    <button type="button" id="registrar" class="primario" hidden>Registrar esta transferencia</button>
+    <dl id="totales" class="totales"></dl>
+    <p id="en-mano" class="en-mano"></p>
+  </section>
+
+  <section aria-labelledby="cargar-titulo">
+    <h2 id="cargar-titulo">Cargar</h2>
+    <div class="pestanas" role="tablist" aria-label="Tipo de movimiento">
+      <button type="button" role="tab" id="tab-gasto" data-tipo="gasto" aria-selected="true">Gasto</button>
+      <button type="button" role="tab" id="tab-cobro" data-tipo="cobro" aria-selected="false" tabindex="-1">Cobro</button>
+      <button type="button" role="tab" id="tab-transferencia" data-tipo="transferencia" aria-selected="false" tabindex="-1">Transferencia</button>
+    </div>
+    <form id="form" class="form-mov" role="tabpanel" novalidate>
+      <label>Fecha <input type="date" name="fecha" required></label>
+      <label>Monto en pesos <input type="text" name="monto" inputmode="numeric" autocomplete="off" placeholder="Ej: 25000" required></label>
+      <label><span id="label-persona">Quién pagó</span> <select name="persona"></select></label>
+      <label data-solo="transferencia">A quién <select name="para"></select></label>
+      <label data-solo="gasto">Categoría <select name="categoria"></select></label>
+      <label data-solo="gasto cobro"><span id="label-cliente">Cliente (opcional)</span> <select name="cliente"></select></label>
+      <label data-solo="otro">Nombre del cliente <input type="text" name="clienteNombre" maxlength="80" autocomplete="off"></label>
+      <label><span id="label-concepto">Concepto</span> <input type="text" name="concepto" maxlength="200" autocomplete="off"></label>
+      <div class="acciones"><button type="submit" class="primario">Guardar</button></div>
+      <p class="motivo" id="motivo-form" role="alert" hidden></p>
+    </form>
+  </section>
+
+  <section aria-labelledby="mov-titulo">
+    <div class="mov-cab">
+      <h2 id="mov-titulo">Movimientos</h2>
+      <label class="mes">Mes <select id="mes"></select></label>
+    </div>
+    <p id="resumen-mes" class="resumen-mes"></p>
+    <ul id="lista" class="movs"></ul>
+    <p class="motivo" id="motivo-lista" role="alert" hidden></p>
+  </section>
+</main>
+</body>
+</html>
