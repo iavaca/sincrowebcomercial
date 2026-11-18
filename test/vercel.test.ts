@@ -26,3 +26,10 @@ describe("vercel.json", () => {
     expect(valor("/api/(.*)", "Cache-Control")).toBe("no-store");
   });
 });
+
+describe("vercel.json: Finanzas", () => {
+  it("la página y el script de Finanzas se revalidan siempre", () => {
+    expect(valor("/finanzas.html", "Cache-Control")).toBe("no-cache, must-revalidate");
+    expect(valor("/finanzas.js", "Cache-Control")).toBe("no-cache, must-revalidate");
+  });
+});
