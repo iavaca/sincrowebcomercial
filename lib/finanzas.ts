@@ -73,7 +73,9 @@ const textoCorto = (v: unknown, max: number): string | null => {
 const NO = { ok: false } as const;
 
 // Arma un movimiento nuevo a partir de lo que mandó el navegador; id y autoría los pone el servidor.
-export function validarNuevo(body: unknown, cargadoPor: Persona, ahora: Date, id: string): { ok: true; mov: Movimiento } | { ok: false } {
+// `listas = false` (movimientos ya guardados): no exige que cliente y categoría sigan en las listas de hoy,
+// para que renombrar o quitar un cliente no deje Finanzas sin poder leer el archivo.
+export function validarNuevo(body: unknown, cargadoPor: Persona, ahora: Date, id: string, listas = true): { ok: true; mov: Movimiento } | { ok: false } {
   if (!esObjeto(body)) return NO;
   const { tipo, fecha, monto, persona } = body;
   if ((tipo !== "gasto" && tipo !== "cobro" && tipo !== "transferencia") || !esFecha(fecha) || !esMonto(monto) || !esPersona(persona)) return NO;
@@ -88,8 +90,8 @@ export function validarNuevo(body: unknown, cargadoPor: Persona, ahora: Date, id
     const conCliente = body.cliente !== undefined && body.cliente !== null && body.cliente !== "";
     if (tipo === "cobro" && !conCliente) return NO;
     if (conCliente) {
-      if (!esCliente(body.cliente)) return NO;
-      mov.cliente = body.cliente;
+      if (listas ? !esCliente(body.cliente) : typeof body.cliente !== "string" || body.cliente.length > MAX_NOMBRE) return NO;
+      mov.cliente = body.cliente as string;
       if (body.cliente === "otro") {
         const nombre = textoCorto(body.clienteNombre, MAX_NOMBRE);
         if (!nombre) return NO;
@@ -97,7 +99,7 @@ export function validarNuevo(body: unknown, cargadoPor: Persona, ahora: Date, id
       }
     }
     if (tipo === "gasto") {
-      if (typeof body.categoria !== "string" || !CATEGORIAS.includes(body.categoria) || concepto === "") return NO;
+      if (typeof body.categoria !== "string" || (listas && !CATEGORIAS.includes(body.categoria)) || body.categoria.length > MAX_NOMBRE || concepto === "") return NO;
       mov.categoria = body.categoria;
     }
   }
@@ -112,7 +114,7 @@ function ordenar(m: Movimiento): Movimiento {
 
 function esMovimientoGuardado(v: unknown): v is Movimiento {
   if (!esObjeto(v) || typeof v.id !== "string" || v.id === "" || typeof v.cargadoEn !== "string" || !esPersona(v.cargadoPor)) return false;
-  const r = validarNuevo(v, v.cargadoPor, new Date(), v.id);
+  const r = validarNuevo(v, v.cargadoPor, new Date(), v.id, false);
   return r.ok;
 }
 

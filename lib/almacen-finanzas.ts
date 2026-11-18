@@ -50,13 +50,29 @@ export async function leer(token: string): Promise<Lectura> {
   if (res.status === 404) {
     // 404 puede ser "no existe la rama" o "existe la rama pero no el archivo".
     const ref = await pedir(token, "GET", `${REPO}/git/ref/heads/${RAMA}`);
-    if (ref.status === 404) return { movs: [], sha: null, rama: false };
+    if (ref.status === 404) {
+      // GitHub responde 404 (no 403) cuando el token no ve un repo privado: sin esto se mostraría "sin movimientos".
+      const repo = await pedir(token, "GET", REPO);
+      if (repo.status === 404) throw new FalloFinanzas(502, "github_sin_permiso");
+      await cuerpoJson(repo, "repo");
+      return { movs: [], sha: null, rama: false };
+    }
     await cuerpoJson(ref, "ref");
     return { movs: [], sha: null, rama: true };
   }
   const d = await cuerpoJson(res, "contents");
-  if (typeof d.sha !== "string" || typeof d.content !== "string" || d.encoding !== "base64") throw new Error("respuesta_invalida: contents");
-  return { movs: parsearArchivo(desdeBase64Utf8(d.content)), sha: d.sha, rama: true };
+  if (typeof d.sha !== "string") throw new Error("respuesta_invalida: contents");
+  let contenido = d.content;
+  // Arriba de 1 MB la Contents API no trae el contenido (encoding "none"): se lee el blob por su sha.
+  if (d.encoding === "none") {
+    const blob = await cuerpoJson(await pedir(token, "GET", `${REPO}/git/blobs/${d.sha}`), "blob");
+    if (blob.encoding !== "base64") throw new Error("respuesta_invalida: blob");
+    contenido = blob.content;
+  } else if (d.encoding !== "base64") {
+    throw new Error("respuesta_invalida: contents");
+  }
+  if (typeof contenido !== "string") throw new Error("respuesta_invalida: contents");
+  return { movs: parsearArchivo(desdeBase64Utf8(contenido)), sha: d.sha, rama: true };
 }
 
 // Lanza FalloFinanzas(409, "conflicto") si alguien escribió en el medio (sha viejo o rama creada a la vez).

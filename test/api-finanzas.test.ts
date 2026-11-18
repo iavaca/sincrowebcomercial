@@ -66,6 +66,7 @@ describe("GET /api/finanzas", () => {
   it("sin rama devuelve lista vacía y saldo en cero", async () => {
     rutas[`GET ${CONTENTS}?ref=${RAMA}`] = () => json({ message: "No commit found" }, 404);
     rutas[`GET ${R}/git/ref/heads/${RAMA}`] = () => json({ message: "Not Found" }, 404);
+    rutas[`GET ${R}`] = () => json({ private: true });
     const res = await pedirGet();
     expect(res.status).toBe(200);
     const d = await res.json();
@@ -80,6 +81,27 @@ describe("GET /api/finanzas", () => {
     const d = await (await pedirGet(sesion(75735426))).json();
     expect(d.yo).toBe("isabella");
     expect(d.saldo.transferir).toEqual({ de: "ivan", para: "isabella", monto: 50000 });
+  });
+
+  it("sin acceso al repo privado (404 en todo) → github_sin_permiso, no 'sin movimientos'", async () => {
+    rutas[`GET ${CONTENTS}?ref=${RAMA}`] = () => json({}, 404);
+    rutas[`GET ${R}/git/ref/heads/${RAMA}`] = () => json({}, 404);
+    rutas[`GET ${R}`] = () => json({ message: "Not Found" }, 404);
+    const res = await pedirGet(sesion(75735426));
+    expect(res.status).toBe(502);
+    expect((await res.json()).motivo).toBe("github_sin_permiso");
+  });
+
+  it("archivo de más de 1 MB: lo lee del blob", async () => {
+    rutas[`GET ${CONTENTS}?ref=${RAMA}`] = () => json({ sha: "s1", encoding: "none", content: "" });
+    rutas[`GET ${R}/git/blobs/s1`] = () => json({ sha: "s1", encoding: "base64", content: b64(serializar([MOV])) });
+    const d = await (await pedirGet()).json();
+    expect(d.movimientos).toEqual([MOV]);
+  });
+
+  it("un cliente que ya no está en la lista no rompe la lectura", async () => {
+    rutas[`GET ${CONTENTS}?ref=${RAMA}`] = archivo([{ ...MOV, cliente: "cliente-viejo" }]);
+    expect((await pedirGet()).status).toBe(200);
   });
 
   it("archivo corrupto → 502 sin datos", async () => {
@@ -99,6 +121,7 @@ describe("POST /api/finanzas", () => {
   it("primera carga: crea la rama huérfana con el archivo y vercel.json", async () => {
     rutas[`GET ${CONTENTS}?ref=${RAMA}`] = () => json({}, 404);
     rutas[`GET ${R}/git/ref/heads/${RAMA}`] = () => json({}, 404);
+    rutas[`GET ${R}`] = () => json({ private: true });
     rutas[`POST ${R}/git/trees`] = () => json({ sha: "t1" }, 201);
     rutas[`POST ${R}/git/commits`] = () => json({ sha: "c1" }, 201);
     rutas[`POST ${R}/git/refs`] = () => json({ ref: "refs/heads/finanzas" }, 201);
