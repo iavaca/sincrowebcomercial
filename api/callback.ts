@@ -1,9 +1,9 @@
 import {
   COOKIE_ESTADO,
-  USUARIO_PERMITIDO,
   abrirEstado,
   cookieEstadoBorrar,
   cookieSesion,
+  esPermitido,
   leerCookie,
   leerEnv,
   mismoEstado,
@@ -70,8 +70,8 @@ export async function GET(request: Request): Promise<Response> {
     return texto(502, "GitHub no respondió, probá de nuevo");
   }
 
-  if (uid !== USUARIO_PERMITIDO) return texto(403, "Esta bandeja es privada");
+  if (!esPermitido(uid)) return texto(403, "Esta bandeja es privada");
 
-  const sesion = await sellar({ uid: USUARIO_PERMITIDO, ...t, inicio: ahora }, env.SESSION_KEY);
+  const sesion = await sellar({ uid, ...t, inicio: ahora }, env.SESSION_KEY);
   return entrar(`/${volverSeguro(estado.volver)}`, cookieSesion(sesion));
 }

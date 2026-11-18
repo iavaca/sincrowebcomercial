@@ -1,7 +1,13 @@
 // Declaración mínima para no sumar @types/node solo por leer variables.
 declare const process: { env: Record<string, string | undefined> };
 
-export const USUARIO_PERMITIDO = 100360837;
+export const USUARIO_PERMITIDO = 100360837; // iavaca
+// IDs numéricos de GitHub (no logins: un login se puede cambiar y reusar).
+export const USUARIOS_PERMITIDOS: ReadonlySet<number> = new Set([
+  USUARIO_PERMITIDO,
+  75735426, // IsabellaGandarillas
+]);
+export const esPermitido = (uid: unknown): uid is number => typeof uid === "number" && USUARIOS_PERMITIDOS.has(uid);
 export const COOKIE = "__Host-bandeja"; // Path=/, sin Domain
 // __Host- exige Path=/; la de estado va acotada a /api, así que usa __Secure-.
 export const COOKIE_ESTADO = "__Secure-bandeja-estado";
@@ -94,7 +100,7 @@ export async function abrir(valor: string, claveB64: string, ahora: number): Pro
   const d = await abrirDatos(valor, claveB64, AAD_SESION);
   if (typeof d !== "object" || d === null) return null;
   const { uid, token, tokenVence, refresh, refreshVence, inicio } = d as Record<string, unknown>;
-  if (uid !== USUARIO_PERMITIDO) return null;
+  if (!esPermitido(uid)) return null;
   if (!esTexto(token) || !esTexto(refresh) || !esNumero(tokenVence) || !esNumero(refreshVence) || !esNumero(inicio)) return null;
   if (ahora - inicio > MAX_SESION_MS) return null;
   return { uid, token, tokenVence, refresh, refreshVence, inicio };

@@ -79,6 +79,11 @@ describe("sellar/abrir", () => {
     expect(await abrir(otro, CLAVE, AHORA)).toBeNull();
   });
 
+  it("abrir acepta la sesión de IsabellaGandarillas (75735426)", async () => {
+    const socia = await sellar({ ...sesion, uid: 75735426 }, CLAVE);
+    expect((await abrir(socia, CLAVE, AHORA))?.uid).toBe(75735426);
+  });
+
   it("abrir rechaza sesiones de más de 7 días", async () => {
     const sellado = await sellar(sesion, CLAVE);
     expect(await abrir(sellado, CLAVE, AHORA + MAX_SESION_MS)).not.toBeNull();
