@@ -34,6 +34,7 @@ describe("middleware de páginas", () => {
     const r = await pedir(`${COOKIE}=${await sellar(sesion(), CLAVE)}`);
     expect(esLogin(r)).toBe(false);
     expect(r.headers.get("x-middleware-next")).toBe("1");
+    expect(r.headers.get("x-panel-sesion")).toBe("ok");
   });
 
   it("solo corre en las páginas, no en /api ni en los assets", async () => {

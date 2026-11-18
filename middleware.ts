@@ -10,8 +10,9 @@ const aLogin = () => new Response(null, { status: 302, headers: { location: "/ap
 export default async function middleware(request: Request): Promise<Response> {
   const env = leerEnv();
   // Mal configurado: que la página siga y el API muestre el error, en vez de un bucle de redirecciones.
-  if (!env) return next();
+  if (!env) return next({ headers: { "x-panel-sesion": "sin-config" } });
   const valor = leerCookie(request, COOKIE);
   const sesion = valor ? await abrir(valor, env.SESSION_KEY, Date.now()) : null;
-  return sesion ? next() : aLogin();
+  // El header permite comprobar desde afuera que el middleware corrió (no revela nada de la sesión).
+  return sesion ? next({ headers: { "x-panel-sesion": "ok" } }) : aLogin();
 }
