@@ -152,6 +152,16 @@ describe("GET /api/callback", () => {
     expect(setCookies(res).some((c) => c.startsWith(`${COOKIE}=`))).toBe(false);
   });
 
+  it("callback de IsabellaGandarillas → 200 con sesión a su nombre", async () => {
+    respuestas["https://api.github.com/user"] = () => json({ id: 75735426, login: "IsabellaGandarillas" });
+    const { estado, cookie } = await empezarLogin();
+    const res = await pedirCallback({ code: "code_123", state: estado }, cookie);
+    expect(res.status).toBe(200);
+    const valor = valorCookie(res, COOKIE);
+    expect(valor).toBeDefined();
+    expect((await abrir(valor!, CLAVE, Date.now()))?.uid).toBe(75735426);
+  });
+
   it("callback de iavaca → 200 que navega a /#t=claude-agents-7 con Set-Cookie __Host-bandeja", async () => {
     const { estado, cookie } = await empezarLogin("#t=claude-agents-7");
     const antes = Date.now();
