@@ -84,5 +84,11 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/finanzas",
+      "destination": "/finanzas.html"
+    }
   ]
 }

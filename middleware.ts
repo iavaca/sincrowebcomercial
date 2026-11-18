@@ -3,7 +3,7 @@
 import { next } from "@vercel/functions";
 import { COOKIE, abrir, leerCookie, leerEnv } from "./lib/sesion.js";
 
-export const config = { matcher: ["/", "/index.html", "/finanzas.html"] };
+export const config = { matcher: ["/", "/index.html", "/finanzas", "/finanzas.html"] };
 
 const aLogin = () => new Response(null, { status: 302, headers: { location: "/api/login", "cache-control": "no-store" } });
 

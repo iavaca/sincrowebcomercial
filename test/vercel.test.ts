@@ -33,3 +33,10 @@ describe("vercel.json: Finanzas", () => {
     expect(valor("/finanzas.js", "Cache-Control")).toBe("no-cache, must-revalidate");
   });
 });
+
+describe("vercel.json: /finanzas", () => {
+  it("/finanzas sin .html sirve la página de Finanzas", () => {
+    const rw = (config as { rewrites?: { source: string; destination: string }[] }).rewrites ?? [];
+    expect(rw).toContainEqual({ source: "/finanzas", destination: "/finanzas.html" });
+  });
+});

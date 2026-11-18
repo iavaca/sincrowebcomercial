@@ -39,6 +39,6 @@ describe("middleware de páginas", () => {
 
   it("solo corre en las páginas, no en /api ni en los assets", async () => {
     const { config } = await import("../middleware.js");
-    expect(config.matcher).toEqual(["/", "/index.html", "/finanzas.html"]);
+    expect(config.matcher).toEqual(["/", "/index.html", "/finanzas", "/finanzas.html"]);
   });
 });
