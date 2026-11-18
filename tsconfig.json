@@ -9,5 +9,5 @@
     "resolveJsonModule": true,
     "types": []
   },
-  "include": ["api", "lib", "test"]
+  "include": ["api", "lib", "test", "middleware.ts"]
 }
